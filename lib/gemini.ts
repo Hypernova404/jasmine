@@ -3,7 +3,7 @@ import { IdentifikasiAIResponseSchema } from "@/data/schema";
 import type { IdentifikasiResult } from "@/data/types";
 import { PLANTS, GANGGUAN_LIST } from "@/data/catalog";
 
-const MODEL_DEFAULT = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const MODEL_DEFAULT = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 const TEMPERATURE = 0.2;
 
 const SYSTEM_PROMPT_TEMPLATE = `Kamu adalah ahli fitopatologi dan agronomi hortikultura Indonesia.

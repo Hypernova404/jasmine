@@ -50,6 +50,7 @@ export function PenyemprotanClient() {
   const [luasM2, setLuasM2] = useState("");
   const [jumlahTanaman, setJumlahTanaman] = useState("");
   const [tanamanId, setTanamanId] = useState("");
+  const [qTanaman, setQTanaman] = useState("");
   const [kapasitasTangki, setKapasitasTangki] = useState("16");
   const [volumePerHa, setVolumePerHa] = useState("300");
   const [umurHari, setUmurHari] = useState("");
@@ -88,6 +89,46 @@ export function PenyemprotanClient() {
       ? { min: dosisManual.angka, max: dosisManual.angka, satuan: dosisManual.satuan }
       : null);
   const satuanPokok = dosisDipakai ? dosisDipakai.satuan.split("/")[0] : "";
+
+  // Picker tanaman: ketik → muncul kandidat dari gangguan terpilih → klik.
+  const kandidat = useMemo(
+    () =>
+      gangguan
+        ? gangguan.plants
+            .map((id) => PLANT_MAP[id])
+            .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        : [],
+    [gangguan],
+  );
+  const qT = qTanaman.trim();
+  const hasilCariT = qT
+    ? kandidat
+        .filter(
+          (p) =>
+            p.nama.toLowerCase().includes(qT.toLowerCase()) ||
+            p.alias.some((a) => a.toLowerCase().includes(qT.toLowerCase())),
+        )
+        .slice(0, 8)
+    : [];
+  const tanamanTerpilih = tanamanId ? PLANT_MAP[tanamanId] : undefined;
+  const sudahPilihT = Boolean(tanamanTerpilih) && qT === tanamanTerpilih?.nama;
+  const tampilkanHasilT = qT.length > 0 && !sudahPilihT;
+
+  function ubahCariTanaman(v: string) {
+    setQTanaman(v);
+    const persis = kandidat.find(
+      (p) => p.nama.toLowerCase() === v.trim().toLowerCase(),
+    );
+    if (persis) setTanamanId(persis.id);
+    else if (tanamanId) setTanamanId("");
+  }
+
+  function pilihTanaman(id: string) {
+    const p = PLANT_MAP[id];
+    if (!p) return;
+    setTanamanId(id);
+    setQTanaman(p.nama);
+  }
 
   function luasHaDariInput(): number | null {
     if (modeLuas === "m2") {
@@ -178,6 +219,8 @@ export function PenyemprotanClient() {
               setGangguanId(e.target.value);
               setObatIdx(0);
               setHasil(null);
+              setTanamanId("");
+              setQTanaman("");
             }}
             className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
           >
@@ -310,20 +353,60 @@ export function PenyemprotanClient() {
               />
             ) : (
               <div className="space-y-2">
-                <select
-                  value={tanamanId}
-                  onChange={(e) => setTanamanId(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm"
-                  aria-label="Pilih tanaman"
-                >
-                  <option value="">— pilih tanaman —</option>
-                  {(gangguan?.plants.length ? gangguan.plants : []).map((p) => (
-                    <option key={p} value={p}>
-                      {PLANT_MAP[p]?.nama ?? p}
-                      {PLANT_MAP[p] ? ` (${PLANT_MAP[p].populasiPerHa.toLocaleString("id-ID")}/ha)` : ""}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={qTanaman}
+                    onChange={(e) => ubahCariTanaman(e.target.value)}
+                    placeholder="Ketik nama tanaman…"
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={tampilkanHasilT}
+                    aria-controls="daftar-tanaman-semprot"
+                    aria-label="Pilih tanaman"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm"
+                  />
+                  {tanamanId && (
+                    <button
+                      type="button"
+                      aria-label="Hapus pilihan tanaman"
+                      onClick={() => {
+                        setTanamanId("");
+                        setQTanaman("");
+                      }}
+                      className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-primary-light hover:text-primary-dark"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                {tampilkanHasilT && (
+                  <ul
+                    id="daftar-tanaman-semprot"
+                    role="listbox"
+                    className="max-h-56 overflow-y-auto rounded-lg border border-border bg-background"
+                  >
+                    {hasilCariT.map((p) => (
+                      <li key={p.id} role="option" aria-selected={p.id === tanamanId}>
+                        <button
+                          type="button"
+                          onClick={() => pilihTanaman(p.id)}
+                          className="flex w-full items-center justify-between gap-2 border-b border-border/50 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-primary-light"
+                        >
+                          <span className="font-medium">{p.nama}</span>
+                          <span className="shrink-0 text-xs text-muted">
+                            {p.populasiPerHa.toLocaleString("id-ID")}/ha
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {tampilkanHasilT && hasilCariT.length === 0 && (
+                  <p className="text-xs text-muted">
+                    Tanaman “{qT}” tidak ada pada gangguan ini.
+                  </p>
+                )}
                 <input
                   type="number"
                   min="1"

@@ -28,6 +28,7 @@ const FASE_COLOR: Record<string, string> = {
 
 export function PemupukanClient() {
   const [plantId, setPlantId] = useState("");
+  const [qTanaman, setQTanaman] = useState("");
   const [modeUmur, setModeUmur] = useState<"tanggal" | "umur">("tanggal");
   const [tanggalTanam, setTanggalTanam] = useState("");
   const [umurInput, setUmurInput] = useState("");
@@ -50,6 +51,34 @@ export function PemupukanClient() {
     [],
   );
   const tanaman = plantOptions.find((p) => p.id === plantId);
+  const q = qTanaman.trim();
+  const hasilCari = q
+    ? plantOptions
+        .filter(
+          (p) =>
+            p.nama.toLowerCase().includes(q.toLowerCase()) ||
+            p.alias.some((a) => a.toLowerCase().includes(q.toLowerCase())),
+        )
+        .slice(0, 8)
+    : [];
+  const sudahTerpilih = Boolean(tanaman) && q === tanaman?.nama;
+  const tampilkanHasil = q.length > 0 && !sudahTerpilih;
+
+  function ubahCariTanaman(v: string) {
+    setQTanaman(v);
+    const persis = plantOptions.find(
+      (p) => p.nama.toLowerCase() === v.trim().toLowerCase(),
+    );
+    if (persis) setPlantId(persis.id);
+    else if (plantId) setPlantId("");
+  }
+
+  function pilihTanaman(id: string) {
+    const p = plantOptions.find((x) => x.id === id);
+    if (!p) return;
+    setPlantId(id);
+    setQTanaman(p.nama);
+  }
 
   function hitung() {
     if (!tanaman) return;
@@ -136,22 +165,68 @@ export function PemupukanClient() {
 
       <section className="no-print space-y-4 rounded-xl border border-border bg-card p-4">
         <div>
-          <label htmlFor="pilih-tanaman" className="mb-1 block text-sm font-semibold">
+          <label htmlFor="cari-tanaman" className="mb-1 block text-sm font-semibold">
             Pilih tanaman
           </label>
-          <select
-            id="pilih-tanaman"
-            value={plantId}
-            onChange={(e) => setPlantId(e.target.value)}
-            className="w-full rounded-lg border border-border bg-white px-3 py-3"
-          >
-            <option value="">— Pilih —</option>
-            {plantOptions.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nama}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              id="cari-tanaman"
+              type="text"
+              value={qTanaman}
+              onChange={(e) => ubahCariTanaman(e.target.value)}
+              placeholder="Ketik nama tanaman…"
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={tampilkanHasil}
+              aria-controls="daftar-tanaman"
+              className="w-full rounded-lg border border-border bg-white px-3 py-3 pr-10"
+            />
+            {plantId && (
+              <button
+                type="button"
+                aria-label="Hapus pilihan tanaman"
+                onClick={() => {
+                  setPlantId("");
+                  setQTanaman("");
+                }}
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-primary-light hover:text-primary-dark"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {tampilkanHasil && (
+            <ul
+              id="daftar-tanaman"
+              role="listbox"
+              className="mt-1 max-h-64 overflow-y-auto rounded-lg border border-border bg-white"
+            >
+              {hasilCari.map((p) => (
+                <li key={p.id} role="option" aria-selected={p.id === plantId}>
+                  <button
+                    type="button"
+                    onClick={() => pilihTanaman(p.id)}
+                    className="flex w-full items-center justify-between gap-2 border-b border-border/50 px-3 py-2.5 text-left text-sm last:border-b-0 hover:bg-primary-light"
+                  >
+                    <span className="font-medium">{p.nama}</span>
+                    <span className="shrink-0 text-xs text-muted">
+                      {p.kategori.replace(/-/g, " ")}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {tampilkanHasil && hasilCari.length === 0 && (
+            <p className="mt-1 text-sm text-muted">
+              Tanaman “{q}” tidak ditemukan di katalog.
+            </p>
+          )}
+          {sudahTerpilih && tanaman && (
+            <p className="mt-1 text-xs text-primary-dark">
+              ✓ {tanaman.nama} dipilih — ubah dengan mengetik lagi atau tombol ✕
+            </p>
+          )}
           {tanaman && (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
               <BadgeVerified verified={tanaman.verified} />

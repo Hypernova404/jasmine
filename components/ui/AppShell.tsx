@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HamburgerMenu } from "./HamburgerMenu";
+import { BottomNav } from "./BottomNav";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -8,16 +9,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-14 w-full max-w-3xl items-center gap-3 px-3">
           <HamburgerMenu />
           <Link
-            href="/identifikasi"
+            href="/"
             className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight"
           >
             Jasmine
           </Link>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-3xl flex-1 px-3 py-4 pb-16">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-3 py-4 pb-24">
         {children}
       </main>
+      <BottomNav />
     </div>
   );
 }

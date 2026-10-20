@@ -63,7 +63,16 @@ npm run validate:data  # validasi seluruh katalog (/data)
 5. Jalankan `npm run validate:data`.
 6. Update `data/COVERAGE.md`.
 
+**Tier B (komoditas via template):** untuk tanaman tanpa jadwal manual, tambah entri
+`KomoditasTierB` di `data/master-list.ts` dengan `kelompok` yang merujuk salah satu
+`TemplateKelompok` di `data/templates.ts`. Jadwal disusun otomatis oleh
+`lib/fertilizer-engine.ts` (target hara → kg pupuk per tahap memakai `Pupuk.kadar`).
+
 Semua entri baru: `verified: false` + `sumber` minimal 1 (acuan umum + verifikasi Kementan/BPTP/Balitsa).
+
+**Tier B (komoditas tanpa jadwal manual):** tambah entri `KomoditasTierB` di `data/master-list.ts`
+dengan `kelompok` merujuk salah satu `TemplateKelompok` di `data/templates.ts` — jadwal pupuk
+disusun otomatis `lib/fertilizer-engine.ts` dari target hara (N/P/K) × kadar pupuk.
 
 ## Batasan & catatan
 

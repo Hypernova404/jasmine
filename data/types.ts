@@ -38,6 +38,71 @@ export type TipePupuk =
   | "pembenah-tanah"
   | "mikro";
 
+/** Tier katalog tanaman: A = jadwal manual per komoditas, B = disusun dari template kelompok. */
+export type TierTanaman = "A" | "B";
+
+/** Kandungan hara pupuk dalam persen massa (N, P2O5, K2O). */
+export interface KadarHara {
+  n?: number;
+  p?: number;
+  k?: number;
+}
+
+/** Kebutuhan hara per hektar sepanjang satu musim tanam (kg/ha). */
+export interface TargetHara {
+  n: number;
+  p: number;
+  k: number;
+}
+
+/** Satu tahap distribusi pada template kelompok — bobot = porsi target total. */
+export interface TahapTemplate {
+  fase: Fase;
+  /** Porsi target pada tahap ini; jumlah seluruh tahap harus = 1. */
+  bobot: number;
+  metode: MetodePupuk;
+  hstMulai?: number;
+  hstSelesai?: number;
+  ulangiHari?: number;
+  catatan?: string;
+}
+
+/** Template jadwal pupuk per kelompok komoditas (dasar rekomendasi Tier B). */
+export interface TemplateKelompok {
+  id: string;
+  nama: string;
+  /** Penjelasan kelompok (mis. botani/kategori komoditas). */
+  deskripsi: string;
+  target: TargetHara;
+  phIdeal: [number, number];
+  tahap: TahapTemplate[];
+  /** Sumber pupuk default per hara (pupukId) — harus punya kadar hara yang sesuai. */
+  sumberHara: { n: string; p: string; k: string };
+  catatan?: string;
+  sumber: string[];
+  verified: boolean;
+}
+
+/** Entri komoditas Tier B — rekomendasi disusun otomatis dari template kelompoknya. */
+export interface KomoditasTierB {
+  id: string;
+  nama: string;
+  alias: string[];
+  namaLatin?: string;
+  kategori: Kategori;
+  /** TemplateKelompok.id */
+  kelompok: string;
+  satuanUmur: "hst" | "bulan";
+  populasiPerHa: number;
+  jarakTanam?: string;
+  umurPanen: [number, number];
+  phIdeal?: [number, number];
+  /** Override sebagian target kelompok (kg/ha/musim). */
+  target?: Partial<TargetHara>;
+  sumber: string[];
+  verified?: boolean;
+}
+
 export interface PupukItem {
   pupukId: string;
   dosis: string;
@@ -72,6 +137,10 @@ export interface Tanaman {
   catatan: string[];
   sumber: string[];
   verified: boolean;
+  /** Default "A" — hanya Tier B yang menyimpan eksplisit. */
+  tier?: TierTanaman;
+  /** TemplateKelompok.id — hanya Tier B. */
+  kelompok?: string;
 }
 
 export interface Obat {
@@ -123,6 +192,8 @@ export interface Pupuk {
   kandungan: string;
   tipe: TipePupuk;
   keterangan: string;
+  /** Kandungan terstruktur utk kalkulasi target hara — hanya untuk pupuk ber-N/P/K. */
+  kadar?: KadarHara;
 }
 
 export type IdentifikasiResult = {

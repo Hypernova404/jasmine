@@ -1,7 +1,15 @@
 import { PLANTS } from "../data/plants";
 import { GANGGUAN_LIST } from "../data/diseases";
 import { FERTILIZERS, FERTILIZER_MAP } from "../data/fertilizers";
-import { TanamanSchema, GangguanSchema, PupukSchema } from "../data/schema";
+import { TEMPLATES, TEMPLATES_MAP } from "../data/templates";
+import { KOMODITAS_TIER_B } from "../data/master-list";
+import {
+  TanamanSchema,
+  GangguanSchema,
+  PupukSchema,
+  TemplateKelompokSchema,
+  KomoditasTierBSchema,
+} from "../data/schema";
 
 const errors: string[] = [];
 
@@ -57,6 +65,50 @@ for (const g of GANGGUAN_LIST) {
   }
 }
 
+// ── Template kelompok (dasar Tier B) ─────────────────────────────────
+const templateIds = new Set<string>();
+for (const t of TEMPLATES) {
+  try {
+    TemplateKelompokSchema.parse(t);
+  } catch (e) {
+    errors.push(`Template ${t.id}: ${(e as Error).message}`);
+  }
+  if (templateIds.has(t.id)) errors.push(`ID template duplikat: ${t.id}`);
+  templateIds.add(t.id);
+
+  const totalBobot = t.tahap.reduce((s, x) => s + x.bobot, 0);
+  if (Math.abs(totalBobot - 1) > 0.001) {
+    errors.push(`Template ${t.id}: total bobot tahap ${totalBobot.toFixed(3)} ≠ 1`);
+  }
+  if (t.target.n <= 0 && t.target.p <= 0 && t.target.k <= 0) {
+    errors.push(`Template ${t.id}: target hara semua nol`);
+  }
+  for (const [hara, pupukId] of Object.entries(t.sumberHara)) {
+    const pupuk = FERTILIZER_MAP[pupukId];
+    if (!pupuk) {
+      errors.push(`Template ${t.id}: sumberHara.${hara} "${pupukId}" tidak ada di fertilizers`);
+    } else if (!pupuk.kadar?.[hara as "n" | "p" | "k"]) {
+      errors.push(`Template ${t.id}: sumberHara.${hara} "${pupukId}" tidak punya kadar ${hara}`);
+    }
+  }
+}
+
+// ── Master list Tier B ───────────────────────────────────────────────
+const tierBIds = new Set<string>();
+for (const k of KOMODITAS_TIER_B) {
+  try {
+    KomoditasTierBSchema.parse(k);
+  } catch (e) {
+    errors.push(`KomoditasTierB ${k.id}: ${(e as Error).message}`);
+  }
+  if (tierBIds.has(k.id)) errors.push(`ID komoditas duplikat: ${k.id}`);
+  tierBIds.add(k.id);
+  if (plantIds.has(k.id)) errors.push(`KomoditasTierB ${k.id}: bentrok id dengan PLANTS`);
+  if (!TEMPLATES_MAP[k.kelompok]) {
+    errors.push(`KomoditasTierB ${k.id}: kelompok "${k.kelompok}" tidak ada di templates`);
+  }
+}
+
 const pctVerifiedPlants = PLANTS.length
   ? Math.round((PLANTS.filter((p) => p.verified).length / PLANTS.length) * 100)
   : 0;
@@ -65,9 +117,14 @@ const pctVerifiedGangguan = GANGGUAN_LIST.length
   : 0;
 
 console.log("── Ringkasan katalog ──");
-console.log(`Tanaman     : ${PLANTS.length} (${pctVerifiedPlants}% verified)`);
-console.log(`Gangguan    : ${GANGGUAN_LIST.length} (${pctVerifiedGangguan}% verified)`);
-console.log(`Pupuk       : ${FERTILIZERS.length}`);
+console.log(`Tanaman     : ${PLANTS.length} (${pctVerifiedPlants}% verified) · Tier A`);
+console.log(
+  `Gangguan    : ${GANGGUAN_LIST.length} (${pctVerifiedGangguan}% verified)`,
+);
+console.log(`Pupuk       : ${FERTILIZERS.length} (${FERTILIZERS.filter((p) => p.kadar).length} berkadar)`);
+console.log(`Template    : ${TEMPLATES.length} kelompok`);
+console.log(`Tier B      : ${KOMODITAS_TIER_B.length} komoditas`);
+console.log(`Total tanaman: ${PLANTS.length + KOMODITAS_TIER_B.length} (A + B)`);
 console.log(
   `Per kategori:`,
   Object.entries(

@@ -31,7 +31,26 @@ Status `verified: false` berarti **acuan umum**, perlu verifikasi ahli (PPL/POPT
 | pisang | Pisang | buah (tahunan) | 4 | acuan umum |
 | pepaya | Pepaya | buah (tahunan) | 4 | acuan umum |
 
-**Total tanaman: 24** (target Fase 4: ~60+)
+**Total tanaman: 24** (Tier A, jadwal manual) + **51 Tier B** (template) = **75**
+(target Fase 4: ~60+ Tier A; master list Tier B ditambah bertahap menuju ~300)
+
+## Komoditas Tier B (jadwal otomatis dari template)
+
+Semua acuan umum — disusun `lib/fertilizer-engine.ts` dari `data/templates.ts`.
+
+| Kelompok | Jumlah | Contoh |
+|---|---|---|
+| solanaceae-buah | 2 | paprika, tomat ceri |
+| cucurbitaceae | 4 | labu siam, gambas, timun panjang |
+| brassica-daun-cepat | 4 | sawi putih, caisim, kailan, selada |
+| brassica-kubis | 3 | brokoli, kembang kol, kubis merah |
+| allium-umbi | 3 | bawang bombay, bawang daun, kucai |
+| umbi-cepat | 4 | ubi jalar, singkong, garut, talas |
+| daun-cepat | 4 | bayam merah, kenikir, genjer, selada air |
+| polong | 3 | kedelai, kacang merah, kacang tolo |
+| rempah | 8 | jahe, kunyit, sereh, cabe jawa |
+| buah-tahunan | 12 | alpukat, durian, manggis, kelapa |
+| hias | 4 | melati, mawar, anggrek, krisan |
 
 ## Gangguan (penyakit / hama / defisiensi)
 

@@ -7,6 +7,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "46% N",
     tipe: "tunggal",
     keterangan: "Pupuk nitrogen tinggi. Gunakan terukur — kelebihan N memicu hama & buah lunak.",
+    kadar: { n: 46 },
   },
   {
     id: "za",
@@ -14,6 +15,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "21% N, 24% S",
     tipe: "tunggal",
     keterangan: "Nitrogen + sulfur, cocok untuk bawang & sayuran daun.",
+    kadar: { n: 21 },
   },
   {
     id: "sp36",
@@ -21,6 +23,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "36% P2O5",
     tipe: "tunggal",
     keterangan: "Fosfat pada pupuk dasar untuk perkembangan akar.",
+    kadar: { p: 36 },
   },
   {
     id: "kcl",
@@ -28,6 +31,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "60% K2O",
     tipe: "tunggal",
     keterangan: "Kalium untuk pembesaran buah/umbi dan ketahanan tanaman.",
+    kadar: { k: 60 },
   },
   {
     id: "npk-161616",
@@ -35,6 +39,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "16-16-16",
     tipe: "majemuk",
     keterangan: "Pupuk majemuk serbaguna untuk vegetatif & generatif.",
+    kadar: { n: 16, p: 16, k: 16 },
   },
   {
     id: "npk-151515",
@@ -42,6 +47,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "15-15-15",
     tipe: "majemuk",
     keterangan: "Majemuk seimbang, umum dipakai saat panen berkelanjutan.",
+    kadar: { n: 15, p: 15, k: 15 },
   },
   {
     id: "npk-phonska",
@@ -49,6 +55,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "15-15-15 + 10% S",
     tipe: "majemuk",
     keterangan: "Majemuk populer di Indonesia dengan tambahan sulfur.",
+    kadar: { n: 15, p: 15, k: 15 },
   },
   {
     id: "kno3",
@@ -56,6 +63,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "13% N, 46% K2O",
     tipe: "majemuk",
     keterangan: "Kalium nitrat untuk fase generatif & pembesaran buah.",
+    kadar: { n: 13, k: 46 },
   },
   {
     id: "can",
@@ -63,6 +71,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "15,5% N, 19% Ca",
     tipe: "majemuk",
     keterangan: "Sumber kalsium — cegah busuk ujung buah (blossom end rot).",
+    kadar: { n: 15.5 },
   },
   {
     id: "mkp",
@@ -70,6 +79,7 @@ export const FERTILIZERS: Pupuk[] = [
     kandungan: "0-52-34",
     tipe: "majemuk",
     keterangan: "Monokalium fosfat, kaya P & K untuk perakaran & pembungaan.",
+    kadar: { p: 52, k: 34 },
   },
   {
     id: "mgso4",

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { analisisGambar, geminiTersedia } from "@/lib/gemini";
-import { cekRateLimit } from "@/lib/ratelimit";
 import { cocokkanGangguan, getPlant, PLANT_MAP } from "@/lib/catalog";
 
 export const maxDuration = 60;
@@ -14,15 +13,7 @@ const BodySchema = z.object({
   plantId: z.string().optional(),
 });
 
-function ambilIP(req: NextRequest): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
-}
-
 export async function POST(req: NextRequest) {
-  const limit = Number(process.env.DAILY_SCAN_LIMIT ?? 10);
-
   if (!geminiTersedia()) {
     return NextResponse.json(
       {
@@ -32,26 +23,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ip = ambilIP(req);
-  const rl = cekRateLimit(`identify:${ip}`, limit);
-  const sisaHeader = { "X-RateLimit-Remaining": String(rl.sisa) };
-  if (!rl.ok) {
-    return NextResponse.json(
-      {
-        error: `Batas analisis harian tercapai (${limit}/hari). Coba lagi besok.`,
-        resetAt: new Date(rl.resetAt).toISOString(),
-      },
-      { status: 429, headers: sisaHeader },
-    );
-  }
-
   let form: FormData;
   try {
     form = await req.formData();
   } catch {
     return NextResponse.json(
       { error: "Format permintaan harus multipart/form-data." },
-      { status: 400, headers: sisaHeader },
+      { status: 400 },
     );
   }
 
@@ -59,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (files.length < 1 || files.length > 3) {
     return NextResponse.json(
       { error: "Unggah 1–3 foto dalam satu analisis." },
-      { status: 400, headers: sisaHeader },
+      { status: 400 },
     );
   }
 
@@ -68,13 +46,13 @@ export async function POST(req: NextRequest) {
     if (!ALLOWED_TYPES.includes(f.type)) {
       return NextResponse.json(
         { error: "Tipe file harus JPEG, PNG, atau WebP." },
-        { status: 400, headers: sisaHeader },
+        { status: 400 },
       );
     }
     if (f.size > MAX_FILE) {
       return NextResponse.json(
         { error: "Ukuran tiap foto maksimal 4 MB. Kompres dulu di perangkat." },
-        { status: 400, headers: sisaHeader },
+        { status: 400 },
       );
     }
     totalSize += f.size;
@@ -82,7 +60,7 @@ export async function POST(req: NextRequest) {
   if (totalSize > MAX_TOTAL) {
     return NextResponse.json(
       { error: "Total ukuran foto maksimal 4 MB." },
-      { status: 400, headers: sisaHeader },
+      { status: 400 },
     );
   }
 
@@ -93,7 +71,7 @@ export async function POST(req: NextRequest) {
   if (!parsedBody.success || (parsedBody.data.plantId && !PLANT_MAP[parsedBody.data.plantId])) {
     return NextResponse.json(
       { error: "plantId tidak dikenal." },
-      { status: 400, headers: sisaHeader },
+      { status: 400 },
     );
   }
   const plantId = parsedBody.data.plantId ?? null;
@@ -121,12 +99,11 @@ export async function POST(req: NextRequest) {
           : { id: null, nama: ai.plantNameGuess },
         gangguan: gangguan ?? null,
         terverifikasi: Boolean(gangguan),
-        sisaKuota: rl.sisa,
       },
-      { headers: { ...sisaHeader, "Cache-Control": "no-store" } },
+      { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Terjadi kesalahan saat analisis.";
-    return NextResponse.json({ error: msg }, { status: 500, headers: sisaHeader });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

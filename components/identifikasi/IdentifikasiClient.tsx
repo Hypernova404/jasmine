@@ -13,7 +13,6 @@ type ResponsServer = {
   tanamanDitampilkan: { id: string | null; nama: string };
   gangguan: Gangguan | null;
   terverifikasi: boolean;
-  sisaKuota: number;
 };
 
 type Tab = "kultur" | "obat" | "pupuk" | "pencegahan";
@@ -77,7 +76,6 @@ export function IdentifikasiClient() {
   const [error, setError] = useState<string | null>(null);
   const [hasil, setHasil] = useState<ResponsServer | null>(null);
   const [tab, setTab] = useState<Tab>("kultur");
-  const [sisaKuota, setSisaKuota] = useState<number | null>(null);
   const [riwayat, setRiwayat] = useState<RiwayatItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const kameraRef = useRef<HTMLInputElement>(null);
@@ -158,7 +156,6 @@ export function IdentifikasiClient() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Analisis gagal.");
       setHasil(data);
-      setSisaKuota(data.sisaKuota);
       setTab("kultur");
       simpanRiwayat(data);
     } catch (e) {
@@ -331,11 +328,6 @@ export function IdentifikasiClient() {
         >
           {loading ? "Menganalisis…" : "🔍 Analisis Sekarang"}
         </button>
-        {sisaKuota !== null && (
-          <p className="mt-2 text-center text-xs text-muted">
-            Sisa kuota hari ini: {sisaKuota}
-          </p>
-        )}
 
         <details className="mt-3 text-sm text-muted">
           <summary className="cursor-pointer font-medium">Tips foto yang baik</summary>

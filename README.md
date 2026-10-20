@@ -4,8 +4,9 @@ Website mobile-first untuk petani/penggiat hortikultura:
 
 1. **Identifikasi Penyakit** — upload foto (kamera/galeri), AI (Gemini) menganalisis, hasil: nama penyakit/hama/defisiensi, gejala, penyebab, **cara mengatasi dari database terstruktur**.
 2. **Rekomendasi Pemupukan** (tanah mineral) — jadwal lengkap sampai panen: jenis pupuk, dosis per tanaman & per ha, total kebutuhan, metode, tanggal kalender.
+3. **Hitung Kebutuhan Semprot** — dosis per tangki, jumlah tangki, jadwal aplikasi & masa tunggu panen.
 
-> Buka web → langsung **Menu 1 (Identifikasi)**. Navigasi via **☰ (hamburger) di kiri atas**: menu 1 & menu 2.
+> Buka web → **Beranda** (kartu menu). Navigasi via **navbar bawah** (Beranda/Identifikasi/Pemupukan/Semprot) atau **☰ (hamburger) di kiri atas**.
 
 ## Tech stack
 
@@ -16,7 +17,7 @@ Website mobile-first untuk petani/penggiat hortikultura:
 - Vitest (unit test)
 - Deploy: GitHub → Vercel
 
-**Tanpa login** (versi ini membuang auth Google agar langsung dipakai). Rate limit identifikasi per IP (in-memory).
+**Tanpa login, tanpa batas kuota scan** (biaya Gemini menempel pada `GEMINI_API_KEY` masing-masing).
 
 ## Setup lokal
 
@@ -27,15 +28,14 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-Buka http://localhost:3000 — langsung ke `/identifikasi`.
+Buka http://localhost:3000 — membuka beranda.
 
 ### Env
 
 | Variabel | Wajib? | Keterangan |
 |---|---|---|
 | `GEMINI_API_KEY` | Ya (untuk fitur scan) | Dari https://aistudio.google.com/apikey |
-| `GEMINI_MODEL` | Tidak | Default `gemini-2.5-flash` |
-| `DAILY_SCAN_LIMIT` | Tidak | Default `10` per IP/hari |
+| `GEMINI_MODEL` | Tidak | Default `gemini-3.5-flash` |
 
 ## Deploy ke Vercel
 
@@ -68,8 +68,7 @@ Semua entri baru: `verified: false` + `sumber` minimal 1 (acuan umum + verifikas
 ## Batasan & catatan
 
 - **Foto tidak disimpan** — hanya diproses di memori.
-- **Rate limit in-memory** — reset saat serverless restart (perkiraan 10/IP/hari, bukan jaminan keras). Upstash Redis bisa ditambahkan nanti.
-- **Tanpa auth** — siapa pun yang punya URL bisa memakai fitur scan (batas per IP). Pasang auth / WAF bila perlu.
+- **Tanpa auth & tanpa limit scan** — siapa pun yang punya URL bisa memakai fitur identifikasi tanpa batas; pasang auth / WAF / rate limit bila suatu saat diperlukan (biaya Gemini bisa membengkak).
 - Dosis pupuk & pestisida = **acuan umum**, bukan rekomendasi resmi. Selalu baca label & konsultasi penyuluh.
 - AI **tidak pernah** memberikan dosis obat — semua dari database terstruktur.
 
@@ -79,7 +78,7 @@ Semua entri baru: `verified: false` + `sumber` minimal 1 (acuan umum + verifikas
 app/           # halaman & API
 components/    # UI (hamburger, identifikasi, pemupukan, katalog)
 data/          # types, schema Zod, fertilizers, plants, diseases, COVERAGE.md
-lib/           # gemini, fertilizer-calc, catalog, ratelimit, image, ics
+lib/           # gemini, fertilizer-calc, spray-calc, catalog, season, soil-profile, image, ics
 scripts/       # validate-data
 tests/         # unit test
 ```

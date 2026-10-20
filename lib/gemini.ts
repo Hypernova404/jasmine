@@ -3,8 +3,48 @@ import { IdentifikasiAIResponseSchema } from "@/data/schema";
 import type { IdentifikasiResult } from "@/data/types";
 import { PLANTS, GANGGUAN_LIST } from "@/data/catalog";
 
-const MODEL_DEFAULT = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+/**
+ * Daftar model yang dicoba berurutan. Model pertama dari GEMINI_MODEL, lalu
+ * cadangan (model generasi baru Gemini). Bila satu model tidak tersedia (404),
+ * otomatis pindah ke model berikutnya.
+ */
+function daftarModel(): string[] {
+  const utama = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+  const cadangan = [
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+  ];
+  return [...new Set([utama, ...cadangan])];
+}
+
 const TEMPERATURE = 0.2;
+
+/**
+ * Kumpulkan semua API key dari env:
+ * - GEMINI_API_KEY  : satu atau beberapa key dipisah koma
+ * - GEMINI_API_KEY_1, GEMINI_API_KEY_2, ... : key tambahan
+ * Urutan dipertahankan, duplikat dibuang.
+ */
+function daftarApiKey(): string[] {
+  const keys: string[] = [];
+  const utama = process.env.GEMINI_API_KEY;
+  if (utama) {
+    for (const k of utama.split(",")) {
+      const t = k.trim();
+      if (t) keys.push(t);
+    }
+  }
+  for (let i = 1; i <= 50; i++) {
+    const k = process.env[`GEMINI_API_KEY_${i}`];
+    if (k && k.trim()) keys.push(k.trim());
+  }
+  return [...new Set(keys)];
+}
+
+/** Penanda giliran key antar-request (modul-level, per instance serverless). */
+let giliranKey = 0;
 
 const SYSTEM_PROMPT_TEMPLATE = `Kamu adalah ahli fitopatologi dan agronomi hortikultura Indonesia.
 Tugasmu: menganalisis foto tanaman dan mengidentifikasi kondisinya.
@@ -50,20 +90,50 @@ export function buildSystemPrompt(plantId?: string | null): string {
 }
 
 export function geminiTersedia(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY);
+  return daftarApiKey().length > 0;
 }
 
-/** Error sementara dari Gemini (overload/rate limit) — layak diulang. */
+/** Error sementara dari Gemini (overload/rate limit) — layak dicoba key lain. */
 export function errorSementaraGemini(e: unknown): boolean {
   const pesan = e instanceof Error ? e.message : String(e);
   const obj = e as { status?: number | string; code?: number | string };
   const kode = String(obj?.status ?? obj?.code ?? "");
   return (
-    /UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded|high demand|503|429/i.test(pesan) ||
+    /UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded|high demand|rate limit|quota|503|429/i.test(
+      pesan,
+    ) ||
     kode === "503" ||
     kode === "429" ||
     kode === "UNAVAILABLE" ||
     kode === "RESOURCE_EXHAUSTED"
+  );
+}
+
+/** Model tidak tersedia untuk key ini (404/NOT_FOUND) — layak pindah model. */
+export function errorModelTidakAda(e: unknown): boolean {
+  const pesan = e instanceof Error ? e.message : String(e);
+  const obj = e as { status?: number | string; code?: number | string };
+  const kode = String(obj?.status ?? obj?.code ?? "");
+  return (
+    /NOT_FOUND|not found|no longer available|is not supported|404/i.test(pesan) ||
+    kode === "404" ||
+    kode === "NOT_FOUND"
+  );
+}
+
+/** API key tidak valid/rusak (401/403) — layak pindah ke key berikutnya. */
+export function errorKeyRusak(e: unknown): boolean {
+  const pesan = e instanceof Error ? e.message : String(e);
+  const obj = e as { status?: number | string; code?: number | string };
+  const kode = String(obj?.status ?? obj?.code ?? "");
+  return (
+    /UNAUTHENTICATED|API key not valid|PERMISSION_DENIED|API_KEY_INVALID|401|403/i.test(
+      pesan,
+    ) ||
+    kode === "401" ||
+    kode === "403" ||
+    kode === "UNAUTHENTICATED" ||
+    kode === "PERMISSION_DENIED"
   );
 }
 
@@ -86,14 +156,13 @@ export async function analisisGambar(
   gambar: GambarInline[],
   plantIdHint?: string | null,
 ): Promise<IdentifikasiResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKeys = daftarApiKey();
+  if (apiKeys.length === 0) {
     throw new Error(
       "GEMINI_API_KEY belum diatur. Fitur identifikasi nonaktif — minta pemilik server mengatur key di aistudio.google.com/apikey.",
     );
   }
 
-  const ai = new GoogleGenAI({ apiKey });
   const systemInstruction = buildSystemPrompt(plantIdHint);
 
   const responseSchema = {
@@ -147,9 +216,10 @@ export async function analisisGambar(
     ],
   } as const;
 
-  async function sekali(): Promise<IdentifikasiResult> {
+  async function sekali(model: string, apiKey: string): Promise<IdentifikasiResult> {
+    const ai = new GoogleGenAI({ apiKey });
     const result = await ai.models.generateContent({
-      model: MODEL_DEFAULT,
+      model,
       contents: [
         {
           role: "user",
@@ -179,30 +249,58 @@ export async function analisisGambar(
     return IdentifikasiAIResponseSchema.parse(parsed);
   }
 
-  /** Error sementara dari Gemini (overload/rate limit) — layak diulang. */
-  function errorSementara(e: unknown): boolean {
-    return errorSementaraGemini(e);
-  }
+  // Susun urutan key mulai dari giliran saat ini (round-robin antar-request),
+  // supaya beban merata ke semua key.
+  const mulai = giliranKey % apiKeys.length;
+  giliranKey = (giliranKey + 1) % apiKeys.length;
+  const urutanKey = [
+    ...apiKeys.slice(mulai),
+    ...apiKeys.slice(0, mulai),
+  ];
 
-  /** Pesan ramah untuk kondisi overload/rate limit. */
-  function pesanSementara(e: unknown): Error {
-    return pesanSementaraGemini(e);
-  }
-
-  const JEDA = [1500, 3500, 7000];
+  const model = daftarModel();
   let terakhir: unknown;
-  for (let i = 0; i <= JEDA.length; i++) {
-    try {
-      return await sekali();
-    } catch (e) {
-      terakhir = e;
-      // Respons non-JSON / schema tidak valid: coba sekali lagi (perilaku lama).
-      const boleh = errorSementara(e) || !(e instanceof Error);
-      if (!boleh || i === JEDA.length) break;
-      await new Promise((r) => setTimeout(r, JEDA[i]));
+  let kenalimit = false;
+  let adaKeyRusak = false;
+
+  // Coba tiap key bergiliran. Untuk tiap key, coba model utama; bila model
+  // tidak tersedia (404), pindah ke model cadangan untuk key yang sama.
+  for (const apiKey of urutanKey) {
+    for (const m of model) {
+      try {
+        return await sekali(m, apiKey);
+      } catch (e) {
+        terakhir = e;
+        if (errorModelTidakAda(e)) {
+          // Model tak tersedia untuk key ini — coba model berikutnya.
+          continue;
+        }
+        if (errorKeyRusak(e)) {
+          // Key rusak/tidak valid — pindah ke key berikutnya.
+          adaKeyRusak = true;
+          break;
+        }
+        if (errorSementaraGemini(e) || !(e instanceof Error)) {
+          // Rate limit/overload atau error tak terduga — catat, pindah key.
+          if (errorSementaraGemini(e)) kenalimit = true;
+          break;
+        }
+        // Error lain (mis. schema): coba model berikutnya sebelum menyerah.
+        continue;
+      }
     }
   }
-  if (errorSementara(terakhir)) throw pesanSementara(terakhir);
-  // Fallback: satu percobaan tambahan seperti semula.
-  return await sekali();
+
+  // Semua key/model gagal. Bila murni limit, beri pesan ramah; bila key rusak
+  // dan itulah penyebabnya, sampaikan apa adanya.
+  if (kenalimit || errorSementaraGemini(terakhir)) {
+    throw pesanSementaraGemini(terakhir);
+  }
+  if (adaKeyRusak && errorKeyRusak(terakhir)) {
+    throw new Error(
+      "API key Gemini tidak valid. Periksa kembali GEMINI_API_KEY di pengaturan server.",
+    );
+  }
+  // Error lain: lempar error aslinya (mis. respons AI bukan JSON).
+  throw terakhir instanceof Error ? terakhir : new Error("Analisis gagal.");
 }

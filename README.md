@@ -18,6 +18,10 @@ Website mobile-first untuk petani/penggiat hortikultura:
 
 **Tanpa login, tanpa batas kuota scan** (biaya Gemini menempel pada `GEMINI_API_KEY` masing-masing).
 
+**Multi-key round-robin & fallback otomatis**: isi banyak key di `GEMINI_API_KEY` (dipisah koma) atau `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, ... App akan giliran pakai key & fallback kalau kena limit/429/503, atau pindah model kalau 404.
+
+Rekomendasi model (2026): `gemini-3.5-flash` (default), `gemini-flash-lite-latest`, `gemini-3.5-flash-lite`.
+
 ## Setup lokal
 
 ```bash
@@ -33,14 +37,15 @@ Buka http://localhost:3000 — membuka beranda.
 
 | Variabel | Wajib? | Keterangan |
 |---|---|---|
-| `GEMINI_API_KEY` | Ya (untuk fitur scan) | Dari https://aistudio.google.com/apikey |
-| `GEMINI_MODEL` | Tidak | Default `gemini-3.5-flash` |
+| `GEMINI_API_KEY` | Ya (untuk fitur scan) | 1+ key dipisah koma, dari https://aistudio.google.com/apikey |
+| `GEMINI_API_KEY_1` ... `GEMINI_API_KEY_N` | Tidak | Key tambahan (alternatif format) |
+| `GEMINI_MODEL` | Tidak | Default `gemini-3.5-flash` (lihat rekomendasi di atas) |
 
 ## Deploy ke Vercel
 
 1. Push repo ini ke GitHub.
 2. Di Vercel: **Add New Project** → import repo.
-3. Set env: `GEMINI_API_KEY` (dan opsional lainnya).
+3. Set env: `GEMINI_API_KEY` (bisa banyak dipisah koma) dan opsional `GEMINI_MODEL`.
 4. Deploy. Setiap push ke `main` akan auto-deploy.
 
 ## Script

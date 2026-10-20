@@ -103,6 +103,20 @@ export function susunJadwalTierB(opsi: OpsiSusunJadwal): TahapPupuk[] {
       );
     }
 
+    const satuan = opsi.template.satuanWaktu;
+    const unit = satuan === "bulan" ? "bulan" : "HST";
+    const saat =
+      tahap.hstMulai !== undefined
+        ? tahap.hstMulai < 0
+          ? `${-tahap.hstMulai} ${unit} pra-tanam`
+          : `${tahap.hstMulai} ${unit}`
+        : undefined;
+    const ulang =
+      tahap.ulangiHari !== undefined
+        ? ` (ulang tiap ${tahap.ulangiHari} ${unit})`
+        : "";
+    const catatanWaktu = saat ? `Waktu: ${saat}${ulang}.` : "";
+
     const persen = Math.round(tahap.bobot * 100);
     return {
       id: `${opsi.template.id}-t${i + 1}`,
@@ -113,7 +127,7 @@ export function susunJadwalTierB(opsi: OpsiSusunJadwal): TahapPupuk[] {
       ...(tahap.ulangiHari !== undefined ? { ulangiHari: tahap.ulangiHari } : {}),
       metode: tahap.metode,
       items,
-      ...(tahap.catatan ? { catatan: tahap.catatan } : {}),
+      catatan: [tahap.catatan, catatanWaktu].filter(Boolean).join(" "),
     };
   });
 }

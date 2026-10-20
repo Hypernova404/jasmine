@@ -76,6 +76,22 @@ describe("PemupukanClient — pemilih tanaman ketik-lalu-klik", () => {
     expect(input.value).toBe("");
     expect(document.body.textContent).not.toMatch(/dipilih — ubah dengan mengetik/);
   });
+
+  it("menjangkau komoditas Tier B (jadwal template)", () => {
+    render(<PemupukanClient />);
+    const input = inputPemupukan();
+
+    fireEvent.change(input, { target: { value: "nanas" } });
+    const list = document.querySelector("#daftar-tanaman") as HTMLElement;
+    expect(list).toBeTruthy();
+    const btn = [...list.querySelectorAll("button")].find(
+      (b) => b.querySelector("span")?.textContent === "Nanas",
+    );
+    expect(btn).toBeTruthy();
+    expect(btn!.textContent).toMatch(/template/);
+    fireEvent.click(btn!);
+    expect(document.body.textContent).toMatch(/Jadwal template otomatis/);
+  });
 });
 
 describe("PenyemprotanClient — pemilih tanaman ketik-lalu-klik", () => {

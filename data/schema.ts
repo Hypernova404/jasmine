@@ -79,6 +79,8 @@ export const TemplateKelompokSchema = z
     deskripsi: z.string().min(1),
     target: TargetHaraSchema,
     phIdeal: z.tuple([z.number().positive(), z.number().max(14)]),
+    /** Satuan waktu tahap/hstMulai template — wajib sama dengan satuanUmur komoditasnya. */
+    satuanWaktu: z.enum(["hst", "bulan"]),
     tahap: z.array(TahapTemplateSchema).min(1),
     sumberHara: z.object({ n: z.string().min(1), p: z.string().min(1), k: z.string().min(1) }),
     catatan: z.string().optional(),

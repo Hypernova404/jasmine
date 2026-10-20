@@ -91,9 +91,31 @@ for (const t of TEMPLATES) {
       errors.push(`Template ${t.id}: sumberHara.${hara} "${pupukId}" tidak punya kadar ${hara}`);
     }
   }
+  const pakai = KOMODITAS_TIER_B.filter((k) => k.kelompok === t.id);
+  for (const k of pakai) {
+    if (k.satuanUmur !== t.satuanWaktu) {
+      errors.push(
+        `Template ${t.id} (${t.satuanWaktu}): dipakai ${k.id} bersatuan ${k.satuanUmur}`,
+      );
+    }
+  }
+  if (pakai.length === 0) {
+    errors.push(`Template ${t.id}: belum ada komoditas Tier B yang memakainya`);
+  }
 }
 
 // ── Master list Tier B ───────────────────────────────────────────────
+/** Luas tanam (m²) dari jarakTanam "a × b cm|m". */
+function luasJarak(jarak: string): number | null {
+  const m = jarak.trim().match(/^([\d.,]+)\s*[×x]\s*([\d.,]+)\s*(cm|m)$/i);
+  if (!m) return null;
+  const a = Number(m[1].replace(",", "."));
+  const b = Number(m[2].replace(",", "."));
+  if (!a || !b) return null;
+  const luas = a * b;
+  return m[3].toLowerCase() === "cm" ? luas / 10000 : luas;
+}
+
 const tierBIds = new Set<string>();
 for (const k of KOMODITAS_TIER_B) {
   try {
@@ -104,8 +126,27 @@ for (const k of KOMODITAS_TIER_B) {
   if (tierBIds.has(k.id)) errors.push(`ID komoditas duplikat: ${k.id}`);
   tierBIds.add(k.id);
   if (plantIds.has(k.id)) errors.push(`KomoditasTierB ${k.id}: bentrok id dengan PLANTS`);
-  if (!TEMPLATES_MAP[k.kelompok]) {
+  const tmpl = TEMPLATES_MAP[k.kelompok];
+  if (!tmpl) {
     errors.push(`KomoditasTierB ${k.id}: kelompok "${k.kelompok}" tidak ada di templates`);
+  } else if (tmpl.satuanWaktu !== k.satuanUmur) {
+    errors.push(
+      `KomoditasTierB ${k.id}: satuanUmur "${k.satuanUmur}" ≠ satuanWaktu template "${k.kelompok}" (${tmpl.satuanWaktu})`,
+    );
+  }
+  if (k.jarakTanam) {
+    const luas = luasJarak(k.jarakTanam);
+    if (luas === null) {
+      errors.push(`KomoditasTierB ${k.id}: jarakTanam "${k.jarakTanam}" tak terbaca`);
+    } else {
+      const harap = 10000 / luas;
+      const simpang = Math.abs(k.populasiPerHa - harap) / harap;
+      if (simpang > 0.2) {
+        errors.push(
+          `KomoditasTierB ${k.id}: populasi ${k.populasiPerHa}/ha menyimpang ${(simpang * 100).toFixed(0)}% dari jarak "${k.jarakTanam}" (≈${Math.round(harap)})`,
+        );
+      }
+    }
   }
 }
 

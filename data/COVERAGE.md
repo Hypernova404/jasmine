@@ -31,26 +31,35 @@ Status `verified: false` berarti **acuan umum**, perlu verifikasi ahli (PPL/POPT
 | pisang | Pisang | buah (tahunan) | 4 | acuan umum |
 | pepaya | Pepaya | buah (tahunan) | 4 | acuan umum |
 
-**Total tanaman: 24** (Tier A, jadwal manual) + **51 Tier B** (template) = **75**
+**Total tanaman: 24** (Tier A, jadwal manual) + **295 Tier B** (template) = **319**
 (target Fase 4: ~60+ Tier A; master list Tier B ditambah bertahap menuju ~300)
 
 ## Komoditas Tier B (jadwal otomatis dari template)
 
 Semua acuan umum — disusun `lib/fertilizer-engine.ts` dari `data/templates.ts`.
 
-| Kelompok | Jumlah | Contoh |
-|---|---|---|
-| solanaceae-buah | 2 | paprika, tomat ceri |
-| cucurbitaceae | 4 | labu siam, gambas, timun panjang |
-| brassica-daun-cepat | 4 | sawi putih, caisim, kailan, selada |
-| brassica-kubis | 3 | brokoli, kembang kol, kubis merah |
-| allium-umbi | 3 | bawang bombay, bawang daun, kucai |
-| umbi-cepat | 4 | ubi jalar, singkong, garut, talas |
-| daun-cepat | 4 | bayam merah, kenikir, genjer, selada air |
-| polong | 3 | kedelai, kacang merah, kacang tolo |
-| rempah | 8 | jahe, kunyit, sereh, cabe jawa |
-| buah-tahunan | 12 | alpukat, durian, manggis, kelapa |
-| hias | 4 | melati, mawar, anggrek, krisan |
+| Kelompok | Satuan | Jumlah | Contoh |
+|---|---|---|---|
+| buah-tahunan | bulan | 86 | alpukat, durian, manggis, kelapa, jeruk varietas, pisang varietas |
+| hias | bulan | 43 | melati, mawar, anggrek, krisan, anthurium, gerbera |
+| rempah | bulan | 32 | jahe, kunyit, sereh, lada, pala, cengkeh, temulawak |
+| rempah-cepat | hst | 26 | kemangi, ketumbar, pudina, rosemary, seledri, sambiloto |
+| cucurbitaceae | hst | 19 | labu siam, gambas, oyong, timun panjang, melon, semangka |
+| daun-cepat | hst | 16 | bayam merah, kenikir, genjer, selada, arugula, endive |
+| polong | hst | 16 | kedelai, kacang hijau, kacang merah, buncis, edamame |
+| brassica-daun-cepat | hst | 14 | sawi putih, caisim, kailan, tatsoi, mizuna |
+| solanaceae-buah | hst | 11 | paprika, tomat ceri, cabe keriting, terong putih |
+| umbi-cepat | hst | 10 | ubi jalar, wortel varietas, kentang, bit, lobak |
+| allium-umbi | hst | 7 | bawang bombay, bawang daun, bawang putih varietas |
+| umbi-lama | bulan | 7 | singkong, garut, talas, suweg, uwi, bengkuang |
+| brassica-kubis | hst | 3 | brokoli, kembang kol, kubis merah |
+| jagung | hst | 2 | jagung pulut, jagung ungu |
+| stroberi | hst | 2 | stroberi, stroberi lokal |
+| nanas | bulan | 1 | nanas |
+
+Setiap `TemplateKelompok` punya `satuanWaktu` (`hst`/`bulan`) yang **wajib sama**
+dengan `satuanUmur` komoditasnya — dijaga oleh `scripts/validate-data.ts` agar
+jadwal tidak salah skala waktu.
 
 ## Gangguan (penyakit / hama / defisiensi)
 

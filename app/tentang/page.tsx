@@ -1,5 +1,6 @@
 import { GANGGUAN_LIST } from "@/data/diseases";
 import { PLANTS } from "@/data/plants";
+import { KOMODITAS_TIER_B } from "@/data/master-list";
 import { FERTILIZERS } from "@/data/fertilizers";
 import { Disclaimer } from "@/components/ui/Disclaimer";
 
@@ -8,6 +9,7 @@ export const metadata = { title: "Tentang — Jasmine" };
 export default function TentangPage() {
   const verifiedPlants = PLANTS.filter((p) => p.verified).length;
   const verifiedGangguan = GANGGUAN_LIST.filter((g) => g.verified).length;
+  const totalTanaman = PLANTS.length + KOMODITAS_TIER_B.length;
   return (
     <div className="space-y-4">
       <header>
@@ -30,7 +32,7 @@ export default function TentangPage() {
         </p>
         <ul className="mt-3 grid grid-cols-3 gap-2 text-center">
           <li className="rounded-lg bg-primary-light p-2">
-            <strong className="block text-lg">{PLANTS.length}</strong> tanaman
+            <strong className="block text-lg">{totalTanaman}</strong> tanaman
           </li>
           <li className="rounded-lg bg-primary-light p-2">
             <strong className="block text-lg">{GANGGUAN_LIST.length}</strong> gangguan
@@ -40,6 +42,10 @@ export default function TentangPage() {
           </li>
         </ul>
         <p className="mt-3 text-xs text-muted">
+          {PLANTS.length} tanaman jadwal manual (Tier A) · {KOMODITAS_TIER_B.length}{" "}
+          komoditas jadwal template otomatis (Tier B).
+        </p>
+        <p className="mt-1 text-xs text-muted">
           Terverifikasi: {verifiedPlants} tanaman, {verifiedGangguan} gangguan.
         </p>
       </section>

@@ -3,7 +3,7 @@
 import { use, useMemo } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PLANT_MAP, GANGGUAN_MAP, FERTILIZER_MAP, namaPupuk } from "@/lib/catalog";
+import { TANAMAN_MAP, GANGGUAN_MAP, FERTILIZER_MAP, namaPupuk } from "@/lib/catalog";
 import { BadgeVerified } from "@/components/ui/BadgeVerified";
 
 type Params = { type: string; id: string };
@@ -11,7 +11,7 @@ type Params = { type: string; id: string };
 export function DetailKatalog({ params }: { params: Promise<Params> }) {
   const { type, id } = use(params);
   const item = useMemo(() => {
-    if (type === "tanaman") return PLANT_MAP[id];
+    if (type === "tanaman") return TANAMAN_MAP[id];
     if (type === "gangguan") return GANGGUAN_MAP[id];
     if (type === "pupuk") return FERTILIZER_MAP[id];
     return undefined;
@@ -20,14 +20,21 @@ export function DetailKatalog({ params }: { params: Promise<Params> }) {
   if (!item) notFound();
 
   if (type === "tanaman") {
-    const t = item as (typeof PLANT_MAP)[string];
+    const t = item as (typeof TANAMAN_MAP)[string];
     return (
       <div className="space-y-4">
         <Link href="/katalog" className="text-sm text-primary-dark">← Kembali ke katalog</Link>
         <header>
           <h1 className="text-2xl font-bold">{t.nama}</h1>
           <p className="text-sm italic text-muted">{t.namaLatin}</p>
-          <div className="mt-1"><BadgeVerified verified={t.verified} /></div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <BadgeVerified verified={t.verified} />
+            {t.tier === "B" && (
+              <span className="rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
+                Template otomatis
+              </span>
+            )}
+          </div>
         </header>
         <section className="rounded-xl border border-border bg-card p-4 text-sm">
           <ul className="space-y-1">

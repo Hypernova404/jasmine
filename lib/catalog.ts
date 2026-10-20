@@ -2,8 +2,28 @@ import type { Gangguan, Pupuk, Tanaman } from "@/data/types";
 import { FERTILIZERS, FERTILIZER_MAP } from "@/data/fertilizers";
 import { PLANTS, PLANT_MAP, getPlant } from "@/data/plants";
 import { GANGGUAN_LIST } from "@/data/diseases";
+import { KOMODITAS_TIER_B } from "@/data/master-list";
+import { bangunTanamanTierB } from "@/lib/fertilizer-engine";
 
 export { FERTILIZERS, FERTILIZER_MAP, PLANTS, PLANT_MAP, getPlant, GANGGUAN_LIST };
+
+/**
+ * Seluruh tanaman yang bisa dipilih pengguna: Tier A (jadwal manual) + Tier B
+ * (jadwal disusun otomatis dari template kelompok oleh fertilizer-engine).
+ * Dibangun sekali di sini agar tidak berulang kali di setiap komponen.
+ */
+export const SEMUA_TANAMAN: Tanaman[] = [
+  ...PLANTS,
+  ...KOMODITAS_TIER_B.map(bangunTanamanTierB),
+];
+
+export const TANAMAN_MAP: Record<string, Tanaman> = Object.fromEntries(
+  SEMUA_TANAMAN.map((t) => [t.id, t]),
+);
+
+export function getTanaman(id: string): Tanaman | undefined {
+  return TANAMAN_MAP[id];
+}
 
 export const GANGGUAN_MAP: Record<string, Gangguan> = Object.fromEntries(
   GANGGUAN_LIST.map((g) => [g.id, g]),
@@ -33,7 +53,7 @@ export function cariKatalog(q: string, kategori?: string): KatalogItem[] {
   const s = q.trim().toLowerCase();
   const hasil: KatalogItem[] = [];
 
-  for (const p of PLANTS) {
+  for (const p of SEMUA_TANAMAN) {
     if (kategori && kategori !== "tanaman" && p.kategori !== kategori) continue;
     const cocok =
       !s ||

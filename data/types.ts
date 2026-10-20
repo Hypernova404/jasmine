@@ -75,6 +75,8 @@ export interface TemplateKelompok {
   deskripsi: string;
   target: TargetHara;
   phIdeal: [number, number];
+  /** Satuan waktu tahap/hstMulai template — wajib sama dengan satuanUmur komoditasnya. */
+  satuanWaktu: "hst" | "bulan";
   tahap: TahapTemplate[];
   /** Sumber pupuk default per hara (pupukId) — harus punya kadar hara yang sesuai. */
   sumberHara: { n: string; p: string; k: string };

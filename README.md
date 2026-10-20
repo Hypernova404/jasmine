@@ -68,11 +68,14 @@ npm run validate:data  # validasi seluruh katalog (/data)
 `TemplateKelompok` di `data/templates.ts`. Jadwal disusun otomatis oleh
 `lib/fertilizer-engine.ts` (target hara → kg pupuk per tahap memakai `Pupuk.kadar`).
 
-Semua entri baru: `verified: false` + `sumber` minimal 1 (acuan umum + verifikasi Kementan/BPTP/Balitsa).
+Saat ini **24 Tier A + 295 Tier B = 319 komoditas**. Tier B otomatis muncul di
+pemilih tanaman Pemupukan, katalog, & halaman detail katalog (bertanda "template").
+Catatan penting: `TemplateKelompok.satuanWaktu` (`hst`/`bulan`) **harus sama** dengan
+`satuanUmur` komoditas yang memakainya — `npm run validate:data` menolak bila beda.
+Template juga divalidasi: total `bobot` tahap = 1, `sumberHara` merujuk pupuk berkadar,
+dan tiap template minimal dipakai satu komoditas.
 
-**Tier B (komoditas tanpa jadwal manual):** tambah entri `KomoditasTierB` di `data/master-list.ts`
-dengan `kelompok` merujuk salah satu `TemplateKelompok` di `data/templates.ts` — jadwal pupuk
-disusun otomatis `lib/fertilizer-engine.ts` dari target hara (N/P/K) × kadar pupuk.
+Semua entri baru: `verified: false` + `sumber` minimal 1 (acuan umum + verifikasi Kementan/BPTP/Balitsa).
 
 ## Batasan & catatan
 

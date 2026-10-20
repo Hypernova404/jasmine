@@ -70,6 +70,7 @@ export function KatalogClient() {
                   </div>
                   <span className="text-xs text-muted capitalize">
                     Tanaman · {h.item.kategori.replace("-", " ")}
+                    {h.item.tier === "B" ? " · template otomatis" : ""}
                   </span>
                 </Link>
               </li>

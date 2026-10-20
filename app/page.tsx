@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PLANTS, GANGGUAN_LIST, FERTILIZERS } from "@/lib/catalog";
+import { SEMUA_TANAMAN, GANGGUAN_LIST, FERTILIZERS } from "@/lib/catalog";
 
 const MENU_UTAMA = [
   {
@@ -50,7 +50,7 @@ export default function BerandaPage() {
         </p>
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <span className="rounded-full bg-white/20 px-2.5 py-1 font-semibold">
-            {PLANTS.length} tanaman
+            {SEMUA_TANAMAN.length} tanaman
           </span>
           <span className="rounded-full bg-white/20 px-2.5 py-1 font-semibold">
             {GANGGUAN_LIST.length} gangguan

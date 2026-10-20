@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Tanaman } from "@/data/types";
-import { PLANTS, namaPupuk } from "@/lib/catalog";
+import { SEMUA_TANAMAN, namaPupuk } from "@/lib/catalog";
 import {
   formatTanggal,
   formatTanggalPanjang,
@@ -47,7 +47,7 @@ export function PemupukanClient() {
   } | null>(null);
 
   const plantOptions = useMemo(
-    () => [...PLANTS].sort((a, b) => a.nama.localeCompare(b.nama, "id")),
+    () => [...SEMUA_TANAMAN].sort((a, b) => a.nama.localeCompare(b.nama, "id")),
     [],
   );
   const tanaman = plantOptions.find((p) => p.id === plantId);
@@ -211,6 +211,7 @@ export function PemupukanClient() {
                     <span className="font-medium">{p.nama}</span>
                     <span className="shrink-0 text-xs text-muted">
                       {p.kategori.replace(/-/g, " ")}
+                      {p.tier === "B" ? " · template" : ""}
                     </span>
                   </button>
                 </li>
@@ -230,6 +231,11 @@ export function PemupukanClient() {
           {tanaman && (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
               <BadgeVerified verified={tanaman.verified} />
+              {tanaman.tier === "B" && (
+                <span className="rounded-full bg-primary-light px-2 py-0.5 font-semibold text-primary-dark">
+                  Jadwal template otomatis
+                </span>
+              )}
               <span>pH ideal {tanaman.phIdeal[0]}–{tanaman.phIdeal[1]}</span>
               <span>· {tanaman.jarakTanam}</span>
               <span>

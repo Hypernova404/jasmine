@@ -38,13 +38,13 @@ export function sesuaikanIntervalMusim(
 /** Catatan irigasi/mulsa untuk satu tahap, berdasarkan musim tanggalnya. */
 export function catatanMusim(musim: Musim): string {
   return musim === "hujan"
-    ? "Musim hujan: pastikan drainase lancar; jangan tabur pupuk saat tanah jenuh."
-    : "Musim kemarau: siram setelah tabur; tabur kering hanya jika ada irigasi, atau ubah jadi kocor.";
+    ? "Musim hujan: pastikan air tidak menggenang; jangan menabur pupuk saat tanah becek."
+    : "Musim kemarau: siram setelah menabur pupuk. Tabur kering hanya bila ada irigasi, atau ganti dengan cara dikocor (disiram).";
 }
 
 /** Peringatan hama/penyakit musiman untuk ditampilkan di UI. */
 export function peringatanMusim(musim: Musim): string {
   return musim === "hujan"
-    ? "Waspada penyakit musim hujan: antraknosa, hawar daun, bercak daun, embun bulu, layu bakteri."
-    : "Waspada hama musim kemarau: thrips, tungau, kutu daun, kutu kebul, ulat grayak.";
+    ? "Awas penyakit musim hujan: antraknosa, hawar daun, bercak daun, embun bulu, layu bakteri."
+    : "Awas hama musim kemarau: thrips, tungau, kutu daun, kutu kebul, ulat grayak.";
 }

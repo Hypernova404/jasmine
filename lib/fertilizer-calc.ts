@@ -247,7 +247,7 @@ export function hitungJadwalPupuk(
     const perHaKg = kapur.dolomitTonPerHa * 1000;
     aplikasi.push({
       tahapId: "kapur-dolomit",
-      label: "Aplikasi Dolomit (H-14)",
+      label: "Kapur dolomit (2 minggu sebelum tanam)",
       fase: "dasar",
       hst: -14,
       tanggal,
@@ -290,15 +290,15 @@ export function hitungJadwalPupuk(
     catatanTanah.push(...catatanTekstur("lempung"));
   } else {
     catatanTanah.push(
-      "Tekstur diasumsikan lempung berpasir (bawaan) — isi pengaturan tanah untuk penyesuaian lebih akurat.",
+      "Jadwal ini dibuat untuk tanah biasa (lempung berpasir). Bila tanah Anda sangat berpasir atau sangat liat, minta bantuan penyuluh untuk menyesuaikan.",
     );
   }
   if (kapur.catatan) catatanTanah.push(kapur.catatan);
 
   const catatanAir =
     sumberAir === "tadah-hujan"
-      ? "Sumber air tadah hujan: pada musim kemarau metode kocor bergantung cadangan air — sesuaikan jadwal dengan ketersediaan air."
-      : "Sumber air irigasi: jadwal kocor dapat dijalani sesuai tahap tanpa penyesuaian air.";
+      ? "Air tadah hujan (mengandalkan hujan): saat kemarau, siram setelah menabur pupuk dan sesuaikan dengan persediaan air."
+      : "Air irigasi: jadwal penyiraman pupuk bisa diikuti seperti tertulis.";
 
   let peringatanMdpl: string | null = null;
   if (opts.mdpl !== undefined && !Number.isNaN(opts.mdpl)) {
@@ -334,11 +334,11 @@ export function umurSaatIni(
 }
 
 const METODE_LABEL: Record<string, string> = {
-  "tabur-lubang": "Tabur lubang",
-  "tabur-alur": "Tabur alur",
-  "campur-tanah": "Campur tanah",
-  kocor: "Kocor",
-  "semprot-daun": "Semprot daun",
+  "tabur-lubang": "Tabur di lubang dekat tanaman",
+  "tabur-alur": "Tabur di alur",
+  "campur-tanah": "Campur dengan tanah",
+  kocor: "Siram larutan pupuk (kocor)",
+  "semprot-daun": "Semprot ke daun",
 };
 
 export function labelMetode(m: string): string {
@@ -346,10 +346,10 @@ export function labelMetode(m: string): string {
 }
 
 const FASE_LABEL: Record<Fase, string> = {
-  dasar: "Dasar",
-  vegetatif: "Vegetatif",
-  generatif: "Generatif",
-  panen: "Panen",
+  dasar: "Masa awal (sebelum/saat tanam)",
+  vegetatif: "Masa pertumbuhan",
+  generatif: "Masa berbunga & berbuah",
+  panen: "Menjelang panen",
 };
 
 export function labelFase(f: Fase): string {
@@ -374,5 +374,5 @@ export function formatTanggalPanjang(d: Date): string {
 }
 
 export function satuanUmurLabel(s: "hst" | "bulan"): string {
-  return s === "bulan" ? "bulan" : "HST";
+  return s === "bulan" ? "bulan" : "hari";
 }

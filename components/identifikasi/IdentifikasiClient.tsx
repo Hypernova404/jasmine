@@ -36,8 +36,8 @@ function badgeJenis(t: string) {
   const map: Record<string, { label: string; cls: string }> = {
     penyakit: { label: "Penyakit", cls: "bg-danger text-white" },
     hama: { label: "Hama", cls: "bg-accent text-white" },
-    defisiensi: { label: "Defisiensi Hara", cls: "bg-primary text-white" },
-    fisiologis: { label: "Fisiologis", cls: "bg-primary-dark text-white" },
+    defisiensi: { label: "Kurang Unsur Hara", cls: "bg-primary text-white" },
+    fisiologis: { label: "Gangguan Tumbuh", cls: "bg-primary-dark text-white" },
     sehat: { label: "Sehat", cls: "bg-primary-light text-primary-dark" },
     tidak_jelas: { label: "Tidak Jelas", cls: "bg-muted/20 text-foreground" },
   };
@@ -251,7 +251,7 @@ export function IdentifikasiClient() {
       <header>
         <h1 className="text-2xl font-bold">1. Identifikasi Penyakit</h1>
         <p className="text-sm text-muted">
-          Foto tanaman → deteksi penyakit, hama, atau defisiensi hara.
+          Foto tanaman → deteksi penyakit, hama, atau kekurangan unsur hara.
         </p>
       </header>
 
@@ -645,9 +645,9 @@ export function IdentifikasiClient() {
               <section className="rounded-lg bg-primary-light/40 p-3 text-sm">
                 <h3 className="mb-1 font-semibold">Saran umum yang aman</h3>
                 <ul className="list-disc space-y-1 pl-5">
-                  <li>Sanitasi lahan — buang bagian tanaman yang sakit</li>
-                  <li>Isolasi tanaman yang terlihat sakit</li>
-                  <li>Perbaiki drainase &amp; jaga kelembapan</li>
+                  <li>Bersihkan lahan — buang bagian tanaman yang sakit</li>
+                  <li>Pisahkan tanaman yang terlihat sakit</li>
+                  <li>Perbaiki saluran air agar tidak menggenang</li>
                   <li>Konsultasikan ke penyuluh/POPT setempat</li>
                 </ul>
               </section>

@@ -104,12 +104,12 @@ export function susunJadwalTierB(opsi: OpsiSusunJadwal): TahapPupuk[] {
     }
 
     const satuan = opsi.template.satuanWaktu;
-    const unit = satuan === "bulan" ? "bulan" : "HST";
+    const unit = satuan === "bulan" ? "bulan" : "hari";
     const saat =
       tahap.hstMulai !== undefined
         ? tahap.hstMulai < 0
-          ? `${-tahap.hstMulai} ${unit} pra-tanam`
-          : `${tahap.hstMulai} ${unit}`
+          ? `${-tahap.hstMulai} ${unit} sebelum tanam`
+          : `umur ${tahap.hstMulai} ${unit}`
         : undefined;
     const ulang =
       tahap.ulangiHari !== undefined

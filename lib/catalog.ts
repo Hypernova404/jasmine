@@ -87,3 +87,14 @@ export function cariKatalog(q: string, kategori?: string): KatalogItem[] {
 export function namaPupuk(id: string): string {
   return FERTILIZER_MAP[id]?.nama ?? id;
 }
+
+const JENIS_LABEL: Record<string, string> = {
+  penyakit: "Penyakit",
+  hama: "Hama",
+  defisiensi: "Kurang unsur hara",
+  fisiologis: "Gangguan tumbuh",
+};
+
+export function labelJenisGangguan(jenis: string): string {
+  return JENIS_LABEL[jenis] ?? jenis;
+}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { cariKatalog } from "@/lib/catalog";
+import { cariKatalog, labelJenisGangguan } from "@/lib/catalog";
 import { BadgeVerified } from "@/components/ui/BadgeVerified";
 
 const FILTERS = [
@@ -12,7 +12,7 @@ const FILTERS = [
   { id: "pupuk", label: "Pupuk" },
   { id: "penyakit", label: "Jenis: Penyakit" },
   { id: "hama", label: "Jenis: Hama" },
-  { id: "defisiensi", label: "Jenis: Defisiensi" },
+  { id: "defisiensi", label: "Jenis: Kurang Unsur Hara" },
 ] as const;
 
 export function KatalogClient() {
@@ -87,8 +87,8 @@ export function KatalogClient() {
                     <span className="font-semibold">{h.item.nama}</span>
                     <BadgeVerified verified={h.item.verified} />
                   </div>
-                  <span className="text-xs text-muted capitalize">
-                    {h.item.jenis} · {h.item.penyebab}
+                  <span className="text-xs text-muted">
+                    {labelJenisGangguan(h.item.jenis)} · {h.item.penyebab}
                   </span>
                 </Link>
               </li>

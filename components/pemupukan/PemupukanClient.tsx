@@ -124,7 +124,11 @@ export function PemupukanClient() {
       const desc = [
         `Tanaman: ${meta.tanaman.nama}`,
         `Tahap: ${ap.label} (${labelFase(ap.fase)})`,
-        `Umur: ${ap.hst} ${satuanUmurLabel(meta.tanaman.satuanUmur)}`,
+        `Umur: ${
+          ap.hst >= 0
+            ? `${ap.hst} ${satuanUmurLabel(meta.tanaman.satuanUmur)}`
+            : `${Math.abs(ap.hst)} hari sebelum tanam`
+        }`,
         `Metode: ${labelMetode(ap.metode)}`,
         ...ap.items.map((i) => `${namaPupuk(i.pupukId)}: ${i.dosis}`),
         ap.catatan ?? "",
@@ -145,11 +149,7 @@ export function PemupukanClient() {
       <header className="no-print">
         <h1 className="text-2xl font-bold">2. Rekomendasi Pemupukan</h1>
         <p className="text-sm text-muted">
-          Jadwal pupuk lengkap untuk <strong>tanah mineral</strong> — dari dasar
-          sampai panen.
-        </p>
-        <p className="mt-1 inline-flex rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
-          Jenis tanah: mineral
+          Jadwal pemupukan lengkap dari mulai tanam sampai panen.
         </p>
       </header>
 
@@ -226,10 +226,10 @@ export function PemupukanClient() {
                   Jadwal template otomatis
                 </span>
               )}
-              <span>pH ideal {tanaman.phIdeal[0]}–{tanaman.phIdeal[1]}</span>
+              <span>pH tanah ideal {tanaman.phIdeal[0]}–{tanaman.phIdeal[1]}</span>
               <span>· {tanaman.jarakTanam}</span>
               <span>
-                · Panen {tanaman.umurPanen[0]}–{tanaman.umurPanen[1]}{" "}
+                · Bisa dipanen umur {tanaman.umurPanen[0]}–{tanaman.umurPanen[1]}{" "}
                 {satuanUmurLabel(tanaman.satuanUmur)}
               </span>
             </div>
@@ -239,7 +239,7 @@ export function PemupukanClient() {
         {tanaman && (
           <>
             <fieldset>
-              <legend className="mb-2 text-sm font-semibold">Waktu tanam / umur</legend>
+              <legend className="mb-2 text-sm font-semibold">Kapan tanaman ditanam?</legend>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -257,7 +257,7 @@ export function PemupukanClient() {
                     modeUmur === "umur" ? "bg-primary text-white" : "bg-primary-light text-primary-dark"
                   }`}
                 >
-                  Umur sekarang
+                  Umur tanaman sekarang
                 </button>
               </div>
               <div className="mt-2">
@@ -300,11 +300,10 @@ export function PemupukanClient() {
                 className="w-full rounded-lg border border-border px-3 py-3"
                 aria-label="Jumlah tanaman"
               />
-              <p className="mt-1 text-xs text-muted">
-                Populasi referensi:{" "}
-                {tanaman.populasiPerHa.toLocaleString("id-ID")} tanaman/ha
-                (luas lahan dihitung otomatis dari jumlah ini)
-              </p>
+                <p className="mt-1 text-xs text-muted">
+                  Banyaknya tanaman Anda: ketik jumlahnya. (Dari angka ini, luas
+                  lahan dihitung otomatis.)
+                </p>
             </fieldset>
 
             <button
@@ -351,17 +350,18 @@ export function PemupukanClient() {
             </ul>
             {hasil.perluDolomit && (
               <p className="mt-2 rounded-lg bg-warning-bg p-2 text-sm font-medium">
-                pH &lt; 5,5: dolomit ± {hasil.rekomendasiDolomitTonPerHa} ton/ha
-                sebelum tanam (H-14)
+                Tanah Anda asam (pH kurang dari 5,5): tabur kapur dolomit ±{" "}
+                {hasil.rekomendasiDolomitTonPerHa} ton/ha sekitar 2 minggu
+                sebelum tanam
                 {hasil.dolomitKgPerPohon > 0 &&
-                  ` / ${hasil.dolomitKgPerPohon} kg per pohon per tahun`}
+                  ` (${hasil.dolomitKgPerPohon} kg per pohon per tahun)`}
                 .
               </p>
             )}
             {hasil.kapurKondisional && !hasil.perluDolomit && (
               <p className="mt-2 rounded-lg bg-warning-bg p-2 text-sm font-medium">
-                Kondisional: uji pH tanah — bila pH &lt; 5,5, tambah dolomit
-                sebelum tanam.
+                Perlu diuji dulu: periksa keasaman tanah (pH). Bila pH kurang
+                dari 5,5, tambahkan kapur dolomit sebelum tanam.
               </p>
             )}
             {hasil.catatanKapur && !hasil.perluDolomit && !hasil.kapurKondisional && (
@@ -410,11 +410,12 @@ export function PemupukanClient() {
                           )}
                         </p>
                         <p className="text-xs text-muted">
-                          {ap.hst >= 0 ? `${ap.hst} ` : `H${ap.hst} `}
-                          {satuanUmurLabel(meta.tanaman.satuanUmur)} · {labelFase(ap.fase)} ·{" "}
-                          {labelMetode(ap.metode)}
+                          {ap.hst >= 0
+                            ? `Saat tanaman berumur ${ap.hst} ${satuanUmurLabel(meta.tanaman.satuanUmur)}`
+                            : `${Math.abs(ap.hst)} hari sebelum tanam`}{" "}
+                          · {labelFase(ap.fase)} · {labelMetode(ap.metode)}
                           {ap.dibagiTekstur &&
-                            ` · dibagi ${ap.dibagiTekstur.baru}× (berpasir)`}
+                            ` · dibagi jadi ${ap.dibagiTekstur.baru} kali karena tanah berpasir`}
                         </p>
                       </div>
                       <p className="text-sm font-medium">{formatTanggal(ap.tanggal)}</p>
@@ -472,9 +473,10 @@ export function PemupukanClient() {
             <h2 className="mb-2 font-bold">Catatan untuk {meta.tanaman.nama}</h2>
             <ul className="list-disc space-y-1 pl-5 text-sm">
               <li>
-                pH ideal: {meta.tanaman.phIdeal[0]}–{meta.tanaman.phIdeal[1]}
+                Keasaman tanah (pH) ideal: {meta.tanaman.phIdeal[0]}–
+                {meta.tanaman.phIdeal[1]}
               </li>
-              <li>Jarak tanam: {meta.tanaman.jarakTanam}</li>
+              <li>Jarak tanam yang disarankan: {meta.tanaman.jarakTanam}</li>
               {meta.tanaman.catatan.map((c) => (
                 <li key={c}>{c}</li>
               ))}
@@ -504,7 +506,7 @@ export function PemupukanClient() {
           </div>
 
           <p className="no-print text-center text-xs text-muted">
-            Dibuat {formatTanggalPanjang(new Date())} · tanah mineral
+            Dibuat {formatTanggalPanjang(new Date())}
           </p>
         </>
       )}

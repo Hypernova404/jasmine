@@ -31,10 +31,7 @@ export function PemupukanClient() {
   const [modeUmur, setModeUmur] = useState<"tanggal" | "umur">("tanggal");
   const [tanggalTanam, setTanggalTanam] = useState("");
   const [umurInput, setUmurInput] = useState("");
-  const [modeLuas, setModeLuas] = useState<"jumlah" | "luas">("jumlah");
   const [jumlahTanaman, setJumlahTanaman] = useState("");
-  const [luasValue, setLuasValue] = useState("");
-  const [luasSatuan, setLuasSatuan] = useState<"m2" | "ha">("m2");
   const [ph, setPh] = useState("");
   const [hasil, setHasil] = useState<HasilKalkulasi | null>(null);
   const [meta, setMeta] = useState<{
@@ -69,16 +66,9 @@ export function PemupukanClient() {
       tTanam = new Date(now - u * (tanaman.satuanUmur === "bulan" ? 30 : 1) * 86400000);
     }
 
-    let opsi: { jumlahTanaman?: number; luasM2?: number };
-    if (modeLuas === "jumlah") {
-      const j = Number(jumlahTanaman);
-      if (!jumlahTanaman || j <= 0) return;
-      opsi = { jumlahTanaman: j };
-    } else {
-      const l = Number(luasValue);
-      if (!luasValue || l <= 0) return;
-      opsi = { luasM2: luasSatuan === "ha" ? l * 10000 : l };
-    }
+    const j = Number(jumlahTanaman);
+    if (!jumlahTanaman || j <= 0) return;
+    const opsi = { jumlahTanaman: j };
 
     const { jumlahTanaman: jml, luasHa } = hitungJumlahTanaman(opsi, tanaman.populasiPerHa);
     if (jml <= 0) return;
@@ -221,68 +211,21 @@ export function PemupukanClient() {
             </fieldset>
 
             <fieldset>
-              <legend className="mb-2 text-sm font-semibold">Jumlah tanaman / luas lahan</legend>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setModeLuas("jumlah")}
-                  className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold ${
-                    modeLuas === "jumlah" ? "bg-primary text-white" : "bg-primary-light text-primary-dark"
-                  }`}
-                >
-                  Jumlah tanaman
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModeLuas("luas")}
-                  className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold ${
-                    modeLuas === "luas" ? "bg-primary text-white" : "bg-primary-light text-primary-dark"
-                  }`}
-                >
-                  Luas lahan
-                </button>
-              </div>
-              <div className="mt-2">
-                {modeLuas === "jumlah" ? (
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    value={jumlahTanaman}
-                    onChange={(e) => setJumlahTanaman(e.target.value)}
-                    placeholder="mis. 500"
-                    className="w-full rounded-lg border border-border px-3 py-3"
-                    aria-label="Jumlah tanaman"
-                  />
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      min={0}
-                      step="any"
-                      value={luasValue}
-                      onChange={(e) => setLuasValue(e.target.value)}
-                      placeholder="mis. 500"
-                      className="w-full rounded-lg border border-border px-3 py-3"
-                      aria-label="Luas lahan"
-                    />
-                    <select
-                      value={luasSatuan}
-                      onChange={(e) => setLuasSatuan(e.target.value as "m2" | "ha")}
-                      className="rounded-lg border border-border px-3 py-3"
-                      aria-label="Satuan luas"
-                    >
-                      <option value="m2">m²</option>
-                      <option value="ha">ha</option>
-                    </select>
-                  </div>
-                )}
-              </div>
+              <legend className="mb-2 text-sm font-semibold">Jumlah tanaman</legend>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={jumlahTanaman}
+                onChange={(e) => setJumlahTanaman(e.target.value)}
+                placeholder="mis. 500"
+                className="w-full rounded-lg border border-border px-3 py-3"
+                aria-label="Jumlah tanaman"
+              />
               <p className="mt-1 text-xs text-muted">
                 Populasi referensi:{" "}
                 {tanaman.populasiPerHa.toLocaleString("id-ID")} tanaman/ha
-                {modeLuas === "luas" && " (jumlah tanaman dihitung otomatis)"}
+                (luas lahan dihitung otomatis dari jumlah ini)
               </p>
             </fieldset>
 

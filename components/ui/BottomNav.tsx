@@ -7,7 +7,6 @@ const ITEM = [
   { href: "/", icon: "🏠", label: "Beranda" },
   { href: "/identifikasi", icon: "📷", label: "Identifikasi" },
   { href: "/pemupukan", icon: "🌱", label: "Pemupukan" },
-  { href: "/penyemprotan", icon: "💧", label: "Semprot" },
 ] as const;
 
 function aktif(pathname: string, href: string): boolean {

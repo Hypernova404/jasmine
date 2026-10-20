@@ -17,12 +17,6 @@ const MENU_UTAMA = [
     label: "Rekomendasi Pemupukan",
     desc: "Jadwal pupuk lengkap sampai panen",
   },
-  {
-    href: "/penyemprotan",
-    no: "3",
-    label: "Hitung Kebutuhan Semprot",
-    desc: "Dosis per tangki, jadwal & masa tunggu",
-  },
 ] as const;
 
 const MENU_SEKUNDER = [

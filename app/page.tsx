@@ -18,14 +18,6 @@ const MENU_UTAMA = [
     desc: "Jadwal pupuk tahap demi tahap sampai panen, siap unduh & cetak",
     cta: "Susun jadwal",
   },
-  {
-    href: "/penyemprotan",
-    icon: "💧",
-    no: "3",
-    label: "Hitung Kebutuhan Semprot",
-    desc: "Dosis per tangki, jumlah tangki, jadwal & masa tunggu panen",
-    cta: "Hitung sekarang",
-  },
 ] as const;
 
 const MENU_SEKUNDER = [

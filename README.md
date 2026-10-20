@@ -4,9 +4,8 @@ Website mobile-first untuk petani/penggiat hortikultura:
 
 1. **Identifikasi Penyakit** — upload foto (kamera/galeri), AI (Gemini) menganalisis, hasil: nama penyakit/hama/defisiensi, gejala, penyebab, **cara mengatasi dari database terstruktur**.
 2. **Rekomendasi Pemupukan** (tanah mineral) — jadwal lengkap sampai panen: jenis pupuk, dosis per tanaman & per ha, total kebutuhan, metode, tanggal kalender.
-3. **Hitung Kebutuhan Semprot** — dosis per tangki, jumlah tangki, jadwal aplikasi & masa tunggu panen.
 
-> Buka web → **Beranda** (kartu menu). Navigasi via **navbar bawah** (Beranda/Identifikasi/Pemupukan/Semprot) atau **☰ (hamburger) di kiri atas**.
+> Buka web → **Beranda** (kartu menu). Navigasi via **navbar bawah** (Beranda/Identifikasi/Pemupukan) atau **☰ (hamburger) di kiri atas**.
 
 ## Tech stack
 

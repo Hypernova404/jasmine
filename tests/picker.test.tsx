@@ -12,9 +12,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { PemupukanClient } from "@/components/pemupukan/PemupukanClient";
-import { PenyemprotanClient } from "@/components/penyemprotan/PenyemprotanClient";
 import { IdentifikasiClient } from "@/components/identifikasi/IdentifikasiClient";
-import { GANGGUAN_LIST, PLANT_MAP } from "@/lib/catalog";
 
 afterEach(cleanup);
 
@@ -92,58 +90,6 @@ describe("PemupukanClient — pemilih tanaman ketik-lalu-klik", () => {
     expect(btn!.textContent).toMatch(/template/);
     fireEvent.click(btn!);
     expect(document.body.textContent).toMatch(/Jadwal template otomatis/);
-  });
-});
-
-describe("PenyemprotanClient — pemilih tanaman ketik-lalu-klik", () => {
-  it("kandidat hanya dari gangguan terpilih, bisa diklik, reset saat ganti gangguan", () => {
-    render(<PenyemprotanClient />);
-    const sel = document.querySelector("#gangguan") as HTMLSelectElement;
-
-    const g1 = GANGGUAN_LIST.find((g) => g.plants.length > 0);
-    const g2 = GANGGUAN_LIST.find((g) => g.id !== g1?.id && g.plants.length > 0);
-    if (!g1 || !g2) throw new Error("tidak ada gangguan dengan tanaman");
-
-    fireEvent.change(sel, { target: { value: g1.id } });
-    fireEvent.click(screen.getByRole("button", { name: /^jumlah tanaman$/ }));
-
-    const input = screen.getByLabelText("Pilih tanaman") as HTMLInputElement;
-    const target = PLANT_MAP[g1.plants[0]];
-    if (!target) throw new Error("tanaman kandidat tidak ada");
-
-    fireEvent.change(input, { target: { value: target.nama.slice(0, 4) } });
-    const hasil = namaHasil("daftar-tanaman-semprot");
-    expect(hasil).toContain(target.nama);
-
-    const list = document.querySelector("#daftar-tanaman-semprot") as HTMLElement;
-    const btn = [...list.querySelectorAll("button")].find(
-      (b) => b.querySelector("span")?.textContent === target.nama,
-    );
-    expect(btn).toBeTruthy();
-    fireEvent.click(btn!);
-    expect(input.value).toBe(target.nama);
-
-    fireEvent.change(sel, { target: { value: g2.id } });
-    expect(input.value).toBe("");
-  });
-
-  it("kandidat tidak memuat tanaman di luar gangguan", () => {
-    render(<PenyemprotanClient />);
-    const sel = document.querySelector("#gangguan") as HTMLSelectElement;
-    const g1 = GANGGUAN_LIST.find((g) => g.plants.length > 0);
-    if (!g1) throw new Error("tidak ada gangguan dengan tanaman");
-    fireEvent.change(sel, { target: { value: g1.id } });
-    fireEvent.click(screen.getByRole("button", { name: /^jumlah tanaman$/ }));
-
-    const input = screen.getByLabelText("Pilih tanaman") as HTMLInputElement;
-    const diLuar = GANGGUAN_LIST.map((g) => g.plants)
-      .flat()
-      .find((id) => !g1.plants.includes(id) && PLANT_MAP[id]);
-    if (!diLuar) return;
-    const nama = PLANT_MAP[diLuar].nama;
-    fireEvent.change(input, { target: { value: nama } });
-    expect(namaHasil("daftar-tanaman-semprot")).not.toContain(nama);
-    expect(document.body.textContent).toMatch(/tidak ada pada gangguan ini/);
   });
 });
 

@@ -208,17 +208,15 @@ export function IdentifikasiClient() {
     }
   }
 
-  function salinRingkasan() {
+function salinRingkasan() {
     if (!hasil) return;
-    const g = hasil.gangguan;
     const lines = [
-      `Hasil Identifikasi — Jasmine`,
+      `Asil Cek Tanaman — Jasmine`,
       `Tanaman: ${hasil.tanamanDitampilkan.nama}`,
-      `Kondisi: ${hasil.ai.diseaseNameGuess}`,
-      `Keyakinan: ${(hasil.ai.confidence * 100).toFixed(0)}%`,
-      `Gejala terlihat: ${hasil.ai.visibleSymptoms.join("; ")}`,
-      g ? `Cara mengatasi: ${g.kulturTeknis.join(" | ")}` : "",
-      `Disclaimer: panduan awal — konsultasikan penyuluh/POPT setempat.`,
+      `Kahanan: ${hasil.ai.diseaseNameGuess}`,
+      `Kepesthen: ${(hasil.ai.confidence * 100).toFixed(0)}%`,
+      `Géjala sing katon: ${hasil.ai.visibleSymptoms.join("; ")}`,
+      `Pènget: iki mung pituduh awal — takonna penyuluh/POPT ing panggonanmu.`,
     ]
       .filter(Boolean)
       .join("\n");
@@ -541,7 +539,6 @@ export function IdentifikasiClient() {
 
           {gangguan && (gangguan.kulturTeknis.length > 0 || gangguan.obat.length > 0) && (
             <section>
-              <h3 className="mb-2 font-semibold">Cara mengatasi (dari database)</h3>
               <div className="flex flex-wrap gap-2" role="tablist">
                 {TABS.map((t) => (
                   <button

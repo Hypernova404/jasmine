@@ -79,6 +79,7 @@ export function IdentifikasiClient() {
   const [sisaKuota, setSisaKuota] = useState<number | null>(null);
   const [riwayat, setRiwayat] = useState<RiwayatItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const kameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // localStorage hanya ada di client — baca sekali saat mount
@@ -233,11 +234,24 @@ export function IdentifikasiClient() {
         </select>
 
         <div className="mt-4 rounded-2xl border-2 border-dashed border-primary/40 bg-primary-light/20 p-4">
+          {/* Input galeri (tanpa capture — buka file picker / galeri) */}
           <input
             ref={fileRef}
             type="file"
             accept="image/*"
             multiple
+            className="hidden"
+            onChange={(e) => {
+              void tambahFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          {/* Input kamera (capture environment — langsung buka kamera belakang) */}
+          <input
+            ref={kameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
             className="hidden"
             onChange={(e) => {
               void tambahFiles(e.target.files);
@@ -283,20 +297,28 @@ export function IdentifikasiClient() {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="mt-3 w-full rounded-xl border-2 border-primary bg-white px-4 py-3.5 text-base font-bold text-primary-dark active:bg-primary-light"
-          >
-            {previews.length === 0
-              ? "Pilih File"
-              : previews.length < 3
-                ? "+ Tambah Foto"
-                : "Ganti Foto"}
-          </button>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => kameraRef.current?.click()}
+              className="rounded-xl border-2 border-primary bg-white px-3 py-3.5 text-base font-bold text-primary-dark active:bg-primary-light"
+            >
+              📷 Kamera
+            </button>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="rounded-xl border-2 border-primary bg-white px-3 py-3.5 text-base font-bold text-primary-dark active:bg-primary-light"
+            >
+              🖼️ Galeri
+            </button>
+          </div>
           <p className="mt-2 text-center text-xs text-muted">
-            Saat diklik, pilih <strong>kamera</strong> atau <strong>galeri</strong> dari
-            menu HP kamu
+            {previews.length === 0
+              ? "Ambil foto langsung atau pilih dari galeri HP kamu"
+              : previews.length < 3
+                ? "Boleh tambah foto lain (daun, buah, batang)"
+                : "Maksimal 3 foto"}
           </p>
         </div>
 

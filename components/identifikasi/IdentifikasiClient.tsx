@@ -78,6 +78,7 @@ export function IdentifikasiClient() {
   const [tab, setTab] = useState<Tab>("kultur");
   const [sisaKuota, setSisaKuota] = useState<number | null>(null);
   const [riwayat, setRiwayat] = useState<RiwayatItem[]>([]);
+  const [tampilMenuFoto, setTampilMenuFoto] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const kameraRef = useRef<HTMLInputElement>(null);
 
@@ -297,25 +298,20 @@ export function IdentifikasiClient() {
             </div>
           )}
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => kameraRef.current?.click()}
-              className="rounded-xl border-2 border-primary bg-white px-3 py-3.5 text-base font-bold text-primary-dark active:bg-primary-light"
-            >
-              📷 Kamera
-            </button>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="rounded-xl border-2 border-primary bg-white px-3 py-3.5 text-base font-bold text-primary-dark active:bg-primary-light"
-            >
-              🖼️ Galeri
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setTampilMenuFoto(true)}
+            className="mt-3 w-full rounded-xl border-2 border-primary bg-white px-4 py-3.5 text-base font-bold text-primary-dark active:bg-primary-light"
+          >
+            {previews.length === 0
+              ? "📷 Pilih Foto"
+              : previews.length < 3
+                ? "+ Tambah Foto"
+                : "Ganti Foto"}
+          </button>
           <p className="mt-2 text-center text-xs text-muted">
             {previews.length === 0
-              ? "Ambil foto langsung atau pilih dari galeri HP kamu"
+              ? "Maksimal 3 foto (daun, buah, batang)"
               : previews.length < 3
                 ? "Boleh tambah foto lain (daun, buah, batang)"
                 : "Maksimal 3 foto"}
@@ -642,6 +638,59 @@ export function IdentifikasiClient() {
         <p className="no-print text-center text-xs text-muted">
           Riwayat scan akan muncul di sini (lokal, tanpa foto).
         </p>
+      )}
+
+      {/* Menu pilihan sumber foto — bottom sheet seperti menu HP */}
+      {tampilMenuFoto && (
+        <div
+          className="no-print fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pilih sumber foto"
+        >
+          {/* Backdrop */}
+          <button
+            type="button"
+            aria-label="Tutup menu"
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setTampilMenuFoto(false)}
+          />
+          {/* Sheet */}
+          <div className="relative z-10 w-full max-w-sm rounded-t-2xl bg-white p-4 pb-8 sm:rounded-2xl sm:pb-4">
+            <p className="mb-3 text-center text-sm font-semibold text-muted">
+              Pilih sumber foto
+            </p>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setTampilMenuFoto(false);
+                  kameraRef.current?.click();
+                }}
+                className="w-full rounded-xl border border-border bg-white px-4 py-4 text-left text-base font-semibold active:bg-primary-light"
+              >
+                📷 Ambil Foto (Kamera)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTampilMenuFoto(false);
+                  fileRef.current?.click();
+                }}
+                className="w-full rounded-xl border border-border bg-white px-4 py-4 text-left text-base font-semibold active:bg-primary-light"
+              >
+                🖼️ Pilih dari Galeri
+              </button>
+              <button
+                type="button"
+                onClick={() => setTampilMenuFoto(false)}
+                className="w-full rounded-xl px-4 py-3 text-center text-base font-medium text-muted"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

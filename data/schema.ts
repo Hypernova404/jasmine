@@ -1,0 +1,170 @@
+import { z } from "zod";
+
+export const KategoriEnum = z.enum([
+  "sayuran-buah",
+  "sayuran-daun",
+  "sayuran-umbi",
+  "sayuran-polong",
+  "buah",
+  "rempah-biofarmaka",
+  "tanaman-hias",
+]);
+
+export const FaseEnum = z.enum(["dasar", "vegetatif", "generatif", "panen"]);
+
+export const MetodePupukEnum = z.enum([
+  "tabur-lubang",
+  "tabur-alur",
+  "campur-tanah",
+  "kocor",
+  "semprot-daun",
+]);
+
+export const GolonganObatEnum = z.enum([
+  "fungisida",
+  "insektisida",
+  "bakterisida",
+  "akarisida",
+  "nematisida",
+  "agens-hayati",
+]);
+
+export const JenisGangguanEnum = z.enum([
+  "penyakit",
+  "hama",
+  "defisiensi",
+  "fisiologis",
+]);
+
+export const TipePupukEnum = z.enum([
+  "tunggal",
+  "majemuk",
+  "organik",
+  "hayati",
+  "pembenah-tanah",
+  "mikro",
+]);
+
+export const PupukItemSchema = z
+  .object({
+    pupukId: z.string().min(1),
+    dosis: z.string().min(1),
+    perTanamanGram: z.number().nonnegative().optional(),
+    perHaKg: z.number().nonnegative().optional(),
+  })
+  .refine(
+    (v) => v.perTanamanGram !== undefined || v.perHaKg !== undefined,
+    { message: "PupukItem harus punya perTanamanGram atau perHaKg" },
+  );
+
+export const TahapPupukSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    fase: FaseEnum,
+    hstMulai: z.number().int(),
+    hstSelesai: z.number().int().optional(),
+    ulangiHari: z.number().int().positive().optional(),
+    metode: MetodePupukEnum,
+    items: z.array(PupukItemSchema).min(1),
+    catatan: z.string().optional(),
+  })
+  .refine(
+    (v) => v.hstSelesai === undefined || v.hstSelesai >= v.hstMulai,
+    { message: "hstSelesai harus >= hstMulai" },
+  );
+
+export const TanamanSchema = z.object({
+  id: z.string().min(1),
+  nama: z.string().min(1),
+  alias: z.array(z.string()),
+  namaLatin: z.string().min(1),
+  kategori: KategoriEnum,
+  satuanUmur: z.enum(["hst", "bulan"]),
+  populasiPerHa: z.number().positive(),
+  jarakTanam: z.string().min(1),
+  umurPanen: z.tuple([z.number().positive(), z.number().positive()]),
+  phIdeal: z.tuple([z.number().positive(), z.number().max(14)]),
+  pupuk: z.array(TahapPupukSchema),
+  catatan: z.array(z.string()),
+  sumber: z.array(z.string()).min(1),
+  verified: z.boolean(),
+});
+
+export const ObatSchema = z.object({
+  bahanAktif: z.string().min(1),
+  golongan: GolonganObatEnum,
+  dosis: z.string().min(1),
+  interval: z.string().min(1),
+  maksAplikasi: z.string().optional(),
+  masaTungguPanen: z.string().optional(),
+  catatan: z.string().optional(),
+});
+
+export const PupukPendukungSchema = z.object({
+  pupukId: z.string().min(1),
+  dosis: z.string().min(1),
+  catatan: z.string().optional(),
+});
+
+export const GangguanSchema = z.object({
+  id: z.string().min(1),
+  nama: z.string().min(1),
+  alias: z.array(z.string()),
+  jenis: JenisGangguanEnum,
+  plants: z.array(z.string()).min(1),
+  penyebab: z.string().min(1),
+  gejala: z.array(z.string()).min(1),
+  kulturTeknis: z.array(z.string()),
+  obat: z.array(ObatSchema),
+  pupukPendukung: z.array(PupukPendukungSchema),
+  pencegahan: z.array(z.string()),
+  tingkatBahaya: z.enum(["rendah", "sedang", "tinggi"]),
+  sumber: z.array(z.string()).min(1),
+  verified: z.boolean(),
+});
+
+export const PupukSchema = z.object({
+  id: z.string().min(1),
+  nama: z.string().min(1),
+  kandungan: z.string().min(1),
+  tipe: TipePupukEnum,
+  keterangan: z.string().min(1),
+});
+
+export const IdentifikasiAIResponseSchema = z.object({
+  isPlant: z.boolean(),
+  imageQuality: z.enum(["baik", "kurang", "buruk"]),
+  plantId: z.string().nullable(),
+  plantNameGuess: z.string(),
+  partAffected: z.enum([
+    "daun",
+    "buah",
+    "batang",
+    "akar",
+    "bunga",
+    "seluruh_tanaman",
+    "tidak_jelas",
+  ]),
+  conditionType: z.enum([
+    "penyakit",
+    "hama",
+    "defisiensi",
+    "fisiologis",
+    "sehat",
+    "tidak_jelas",
+  ]),
+  diseaseId: z.string().nullable(),
+  diseaseNameGuess: z.string(),
+  confidence: z.number().min(0).max(1),
+  visibleSymptoms: z.array(z.string()),
+  differential: z.array(
+    z.object({
+      diseaseId: z.string().nullable(),
+      name: z.string(),
+      confidence: z.number().min(0).max(1),
+    }),
+  ),
+  needsMorePhotos: z.boolean(),
+  photoTips: z.string(),
+});

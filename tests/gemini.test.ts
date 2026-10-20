@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { IdentifikasiAIResponseSchema } from "@/data/schema";
-import { buildSystemPrompt } from "@/lib/gemini";
+import {
+  buildSystemPrompt,
+  errorSementaraGemini,
+  pesanSementaraGemini,
+} from "@/lib/gemini";
 
 describe("IdentifikasiAIResponseSchema", () => {
   it("valid payload diterima", () => {
@@ -53,5 +57,36 @@ describe("buildSystemPrompt", () => {
   it("hint tanaman tanpa ada = tidak ada", () => {
     const p = buildSystemPrompt(null);
     expect(p).toContain("PLANT_HINT_DARI_USER: tidak ada");
+  });
+});
+
+describe("errorSementaraGemini", () => {
+  it("mengenali 503 UNAVAILABLE sebagai sementara", () => {
+    const e = new Error(
+      "This model is currently experiencing high demand. Spikes in demand are usually temporary.",
+    );
+    (e as { status?: number }).status = 503;
+    expect(errorSementaraGemini(e)).toBe(true);
+  });
+
+  it("mengenali 429 / RESOURCE_EXHAUSTED sebagai sementara", () => {
+    const e = new Error("RESOURCE_EXHAUSTED: quota exceeded");
+    expect(errorSementaraGemini(e)).toBe(true);
+  });
+
+  it("error validasi biasa bukan sementara", () => {
+    expect(errorSementaraGemini(new Error("Respons AI bukan JSON yang valid."))).toBe(false);
+  });
+});
+
+describe("pesanSementaraGemini", () => {
+  it("rate limit → pesan spesifik", () => {
+    const m = pesanSementaraGemini(new Error("RESOURCE_EXHAUSTED")).message;
+    expect(m).toMatch(/rate limit/i);
+  });
+
+  it("overload → pesan penuh/permintaan tinggi", () => {
+    const m = pesanSementaraGemini(new Error("high demand")).message;
+    expect(m).toMatch(/penuh|permintaan tinggi/i);
   });
 });

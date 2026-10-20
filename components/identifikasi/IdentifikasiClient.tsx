@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Gangguan, IdentifikasiResult } from "@/data/types";
-import { PLANTS, namaPupuk } from "@/lib/catalog";
+import { SEMUA_TANAMAN, PLANT_MAP, namaPupuk } from "@/lib/catalog";
 import { kompresGambar, formatUkuran } from "@/lib/image";
 import { Disclaimer } from "@/components/ui/Disclaimer";
 import { BadgeVerified } from "@/components/ui/BadgeVerified";
@@ -69,11 +69,13 @@ function muatRiwayat(): RiwayatItem[] {
 
 export function IdentifikasiClient() {
   const [plantId, setPlantId] = useState("");
+  const [qTanaman, setQTanaman] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("Menganalisis foto dengan AI…");
   const [error, setError] = useState<string | null>(null);
+  const [errorSementara, setErrorSementara] = useState(false);
   const [hasil, setHasil] = useState<ResponsServer | null>(null);
   const [tab, setTab] = useState<Tab>("kultur");
   const [riwayat, setRiwayat] = useState<RiwayatItem[]>([]);
@@ -87,9 +89,44 @@ export function IdentifikasiClient() {
   }, []);
 
   const plantOptions = useMemo(
-    () => [...PLANTS].sort((a, b) => a.nama.localeCompare(b.nama, "id")),
+    () => [...SEMUA_TANAMAN].sort((a, b) => a.nama.localeCompare(b.nama, "id")),
     [],
   );
+
+  const tanamanTerpilih = plantOptions.find((p) => p.id === plantId);
+  const qCari = qTanaman.trim();
+  const hasilCariTanaman = qCari
+    ? plantOptions
+        .filter(
+          (p) =>
+            p.nama.toLowerCase().includes(qCari.toLowerCase()) ||
+            p.alias.some((a) => a.toLowerCase().includes(qCari.toLowerCase())),
+        )
+        .slice(0, 8)
+    : [];
+  const sudahTerpilih = Boolean(tanamanTerpilih) && qCari === tanamanTerpilih?.nama;
+  const tampilkanHasilTanaman = qCari.length > 0 && !sudahTerpilih;
+
+  function ubahCariTanaman(v: string) {
+    setQTanaman(v);
+    const persis = plantOptions.find(
+      (p) => p.nama.toLowerCase() === v.trim().toLowerCase(),
+    );
+    if (persis) setPlantId(persis.id);
+    else if (plantId) setPlantId("");
+  }
+
+  function pilihTanaman(id: string) {
+    const p = plantOptions.find((x) => x.id === id);
+    if (!p) return;
+    setPlantId(id);
+    setQTanaman(p.nama);
+  }
+
+  function hapusPilihanTanaman() {
+    setPlantId("");
+    setQTanaman("");
+  }
 
   const tambahFiles = useCallback(async (list: FileList | null) => {
     if (!list || list.length === 0) return;
@@ -136,6 +173,7 @@ export function IdentifikasiClient() {
     if (files.length === 0) return;
     setLoading(true);
     setError(null);
+    setErrorSementara(false);
     setHasil(null);
     const pesan = [
       "Mengompres & mengirim foto…",
@@ -150,11 +188,16 @@ export function IdentifikasiClient() {
     }, 2500);
     try {
       const fd = new FormData();
-      if (plantId) fd.append("plantId", plantId);
+      // Hint ke AI hanya untuk Tier A — AI & database gangguan hanya mengenal
+      // komoditas Tier A. Tier B tetap dapat dipilih, dipakai untuk konteks UI.
+      if (plantId && PLANT_MAP[plantId]) fd.append("plantId", plantId);
       files.forEach((f) => fd.append("files", f));
       const res = await fetch("/api/identify", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Analisis gagal.");
+      if (!res.ok) {
+        setErrorSementara(Boolean(data.sementara) || res.status === 503);
+        throw new Error(data.error ?? "Analisis gagal.");
+      }
       setHasil(data);
       setTab("kultur");
       simpanRiwayat(data);
@@ -214,22 +257,68 @@ export function IdentifikasiClient() {
       </header>
 
       <section className="rounded-xl border border-border bg-card p-4">
-        <label htmlFor="plantId" className="mb-1 block text-sm font-semibold">
+        <label htmlFor="cari-tanaman-identifikasi" className="mb-1 block text-sm font-semibold">
           Jenis tanaman (opsional, bantu akurasi)
         </label>
-        <select
-          id="plantId"
-          value={plantId}
-          onChange={(e) => setPlantId(e.target.value)}
-          className="w-full rounded-lg border border-border bg-white px-3 py-3 text-base"
-        >
-          <option value="">— Tidak diketahui —</option>
-          {plantOptions.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nama}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <input
+            id="cari-tanaman-identifikasi"
+            type="text"
+            value={qTanaman}
+            onChange={(e) => ubahCariTanaman(e.target.value)}
+            placeholder="Ketik nama tanaman…"
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={tampilkanHasilTanaman}
+            aria-controls="daftar-tanaman-identifikasi"
+            className="w-full rounded-lg border border-border bg-white px-3 py-3 pr-10 text-base"
+          />
+          {plantId && (
+            <button
+              type="button"
+              aria-label="Hapus pilihan tanaman"
+              onClick={hapusPilihanTanaman}
+              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-primary-light hover:text-primary-dark"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {tampilkanHasilTanaman && (
+          <ul
+            id="daftar-tanaman-identifikasi"
+            role="listbox"
+            className="mt-1 max-h-64 overflow-y-auto rounded-lg border border-border bg-white"
+          >
+            {hasilCariTanaman.map((p) => (
+              <li key={p.id} role="option" aria-selected={p.id === plantId}>
+                <button
+                  type="button"
+                  onClick={() => pilihTanaman(p.id)}
+                  className="flex w-full items-center justify-between gap-2 border-b border-border/50 px-3 py-2.5 text-left text-sm last:border-b-0 hover:bg-primary-light"
+                >
+                  <span className="font-medium">{p.nama}</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {p.kategori.replace(/-/g, " ")}
+                    {p.tier === "B" ? " · template" : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {tampilkanHasilTanaman && hasilCariTanaman.length === 0 && (
+          <p className="mt-1 text-sm text-muted">
+            Tanaman “{qCari}” tidak ditemukan di katalog.
+          </p>
+        )}
+        {sudahTerpilih && tanamanTerpilih && (
+          <p className="mt-1 text-xs text-primary-dark">
+            ✓ {tanamanTerpilih.nama} dipilih — ubah dengan mengetik lagi atau tombol ✕
+            {!PLANT_MAP[tanamanTerpilih.id] &&
+              " (jadwal template; AI memakai nama umum)"}
+          </p>
+        )}
 
         <div className="mt-4 rounded-2xl border-2 border-dashed border-primary/40 bg-primary-light/20 p-4">
           {/* Input galeri (tanpa capture — buka file picker / galeri) */}
@@ -368,8 +457,20 @@ export function IdentifikasiClient() {
 
       {error && (
         <div className="rounded-xl border-2 border-danger bg-red-50 p-4 text-danger" role="alert">
-          <p className="font-semibold">Terjadi kesalahan</p>
+          <p className="font-semibold">
+            {errorSementara ? "Server AI sedang sibuk" : "Terjadi kesalahan"}
+          </p>
           <p className="text-sm">{error}</p>
+          {errorSementara && (
+            <button
+              type="button"
+              onClick={analisis}
+              disabled={loading || files.length === 0}
+              className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              Coba lagi
+            </button>
+          )}
         </div>
       )}
 

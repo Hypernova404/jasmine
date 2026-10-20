@@ -53,6 +53,33 @@ export function geminiTersedia(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
 }
 
+/** Error sementara dari Gemini (overload/rate limit) — layak diulang. */
+export function errorSementaraGemini(e: unknown): boolean {
+  const pesan = e instanceof Error ? e.message : String(e);
+  const obj = e as { status?: number | string; code?: number | string };
+  const kode = String(obj?.status ?? obj?.code ?? "");
+  return (
+    /UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded|high demand|503|429/i.test(pesan) ||
+    kode === "503" ||
+    kode === "429" ||
+    kode === "UNAVAILABLE" ||
+    kode === "RESOURCE_EXHAUSTED"
+  );
+}
+
+/** Pesan ramah untuk kondisi overload/rate limit. */
+export function pesanSementaraGemini(e: unknown): Error {
+  const pesan = e instanceof Error ? e.message : String(e);
+  if (/RESOURCE_EXHAUSTED|rate limit|quota|429/i.test(pesan)) {
+    return new Error(
+      "Server AI sedang membatasi permintaan (rate limit). Tunggu sebentar lalu coba lagi.",
+    );
+  }
+  return new Error(
+    "Server AI sedang penuh (permintaan tinggi). Tunggu sebentar lalu coba lagi.",
+  );
+}
+
 type GambarInline = { inlineData: { mimeType: string; data: string } };
 
 export async function analisisGambar(
@@ -152,9 +179,30 @@ export async function analisisGambar(
     return IdentifikasiAIResponseSchema.parse(parsed);
   }
 
-  try {
-    return await sekali();
-  } catch {
-    return await sekali();
+  /** Error sementara dari Gemini (overload/rate limit) — layak diulang. */
+  function errorSementara(e: unknown): boolean {
+    return errorSementaraGemini(e);
   }
+
+  /** Pesan ramah untuk kondisi overload/rate limit. */
+  function pesanSementara(e: unknown): Error {
+    return pesanSementaraGemini(e);
+  }
+
+  const JEDA = [1500, 3500, 7000];
+  let terakhir: unknown;
+  for (let i = 0; i <= JEDA.length; i++) {
+    try {
+      return await sekali();
+    } catch (e) {
+      terakhir = e;
+      // Respons non-JSON / schema tidak valid: coba sekali lagi (perilaku lama).
+      const boleh = errorSementara(e) || !(e instanceof Error);
+      if (!boleh || i === JEDA.length) break;
+      await new Promise((r) => setTimeout(r, JEDA[i]));
+    }
+  }
+  if (errorSementara(terakhir)) throw pesanSementara(terakhir);
+  // Fallback: satu percobaan tambahan seperti semula.
+  return await sekali();
 }

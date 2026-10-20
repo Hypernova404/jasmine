@@ -104,6 +104,12 @@ export async function POST(req: NextRequest) {
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Terjadi kesalahan saat analisis.";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const sementara = /server ai sedang|permintaan tinggi|rate limit|UNAVAILABLE|RESOURCE_EXHAUSTED/i.test(
+      msg,
+    );
+    return NextResponse.json(
+      { error: msg, sementara },
+      { status: sementara ? 503 : 500 },
+    );
   }
 }

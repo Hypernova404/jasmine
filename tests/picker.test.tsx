@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 
 import { PemupukanClient } from "@/components/pemupukan/PemupukanClient";
 import { PenyemprotanClient } from "@/components/penyemprotan/PenyemprotanClient";
+import { IdentifikasiClient } from "@/components/identifikasi/IdentifikasiClient";
 import { GANGGUAN_LIST, PLANT_MAP } from "@/lib/catalog";
 
 afterEach(cleanup);
@@ -143,5 +144,47 @@ describe("PenyemprotanClient — pemilih tanaman ketik-lalu-klik", () => {
     fireEvent.change(input, { target: { value: nama } });
     expect(namaHasil("daftar-tanaman-semprot")).not.toContain(nama);
     expect(document.body.textContent).toMatch(/tidak ada pada gangguan ini/);
+  });
+});
+
+describe("IdentifikasiClient — pemilih tanaman ketik-lalu-klik (semua Tier)", () => {
+  function inputIdentifikasi(): HTMLInputElement {
+    const el = document.querySelector("#cari-tanaman-identifikasi");
+    if (!el) throw new Error("input #cari-tanaman-identifikasi tidak ada");
+    return el as HTMLInputElement;
+  }
+
+  it("menampilkan daftar & bisa memilih tanaman Tier A", () => {
+    render(<IdentifikasiClient />);
+    const input = inputIdentifikasi();
+    fireEvent.change(input, { target: { value: "cabai" } });
+    const hasil = namaHasil("daftar-tanaman-identifikasi");
+    expect(hasil.length).toBeGreaterThan(0);
+
+    const list = document.querySelector("#daftar-tanaman-identifikasi") as HTMLElement;
+    fireEvent.click(list.querySelectorAll("button")[0]);
+    expect(input.value).not.toBe("");
+    expect(document.body.textContent).toMatch(/dipilih — ubah dengan mengetik/);
+  });
+
+  it("menjangkau komoditas Tier B & menandainya template", () => {
+    render(<IdentifikasiClient />);
+    const input = inputIdentifikasi();
+    fireEvent.change(input, { target: { value: "nanas" } });
+    const list = document.querySelector("#daftar-tanaman-identifikasi") as HTMLElement;
+    const btn = [...list.querySelectorAll("button")].find(
+      (b) => b.querySelector("span")?.textContent === "Nanas",
+    );
+    expect(btn).toBeTruthy();
+    expect(btn!.textContent).toMatch(/template/);
+    fireEvent.click(btn!);
+    expect(document.body.textContent).toMatch(/jadwal template; AI memakai nama umum/);
+  });
+
+  it("pesan tak ditemukan saat ketikan tidak cocok", () => {
+    render(<IdentifikasiClient />);
+    const input = inputIdentifikasi();
+    fireEvent.change(input, { target: { value: "zzzz" } });
+    expect(document.body.textContent).toMatch(/tidak ditemukan di katalog/);
   });
 });

@@ -33,6 +33,9 @@ export function PemupukanClient() {
   const [umurInput, setUmurInput] = useState("");
   const [jumlahTanaman, setJumlahTanaman] = useState("");
   const [ph, setPh] = useState("");
+  const [tekstur, setTekstur] = useState<"" | "berpasir" | "lempung" | "liat">("");
+  const [mdpl, setMdpl] = useState("");
+  const [sumberAir, setSumberAir] = useState<"tadah-hujan" | "irigasi">("tadah-hujan");
   const [hasil, setHasil] = useState<HasilKalkulasi | null>(null);
   const [meta, setMeta] = useState<{
     tanaman: Tanaman;
@@ -74,12 +77,16 @@ export function PemupukanClient() {
     if (jml <= 0) return;
 
     const pH = ph ? Number(ph) : undefined;
+    const mdplNum = mdpl && !Number.isNaN(Number(mdpl)) ? Number(mdpl) : undefined;
     const h = hitungJadwalPupuk(tanaman, {
       tanggalTanam: tTanam,
       jumlahTanaman: jml,
       luasHa,
       umurSekarang: umur,
       pH: pH && !Number.isNaN(pH) ? pH : undefined,
+      tekstur: tekstur || undefined,
+      mdpl: mdplNum,
+      sumberAir,
     });
     setHasil(h);
     setMeta({
@@ -229,9 +236,11 @@ export function PemupukanClient() {
               </p>
             </fieldset>
 
-            <div>
-              <label htmlFor="ph" className="mb-1 block text-sm font-semibold">
-                pH tanah (opsional)
+            <fieldset className="rounded-lg border border-border p-3">
+              <legend className="px-1 text-sm font-semibold">Pengaturan tanah (opsional)</legend>
+
+              <label htmlFor="ph" className="mb-1 block text-sm">
+                pH tanah
               </label>
               <input
                 id="ph"
@@ -249,7 +258,63 @@ export function PemupukanClient() {
                   pH &lt; 5,5 — disarankan aplikasi dolomit sebelum tanam.
                 </p>
               )}
-            </div>
+              {ph && Number(ph) > 7.3 && (
+                <p className="mt-1 text-sm text-danger">
+                  pH &gt; 7,3 — jangan kapur; pertimbangkan ganti urea dengan ZA.
+                </p>
+              )}
+
+              <label htmlFor="tekstur" className="mb-1 mt-3 block text-sm">
+                Tekstur tanah
+              </label>
+              <select
+                id="tekstur"
+                value={tekstur}
+                onChange={(e) => setTekstur(e.target.value as typeof tekstur)}
+                className="w-full rounded-lg border border-border px-3 py-3"
+              >
+                <option value="">Lempung berpasir (bawaan)</option>
+                <option value="berpasir">Berpasir</option>
+                <option value="lempung">Lempung</option>
+                <option value="liat">Liat</option>
+              </select>
+              {tekstur === "berpasir" && (
+                <p className="mt-1 text-xs text-muted">
+                  Pilihan berpasir: tahap N/K dibagi jadi lebih banyak aplikasi
+                  (total hara tetap).
+                </p>
+              )}
+
+              <label htmlFor="mdpl" className="mb-1 mt-3 block text-sm">
+                Ketinggian lokasi (mdpl)
+              </label>
+              <input
+                id="mdpl"
+                type="number"
+                min={0}
+                max={5000}
+                value={mdpl}
+                onChange={(e) => setMdpl(e.target.value)}
+                placeholder="mis. 120"
+                className="w-full rounded-lg border border-border px-3 py-3"
+              />
+
+              <span className="mb-1 mt-3 block text-sm">Sumber air</span>
+              <div className="flex gap-2">
+                {(["tadah-hujan", "irigasi"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSumberAir(s)}
+                    className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold ${
+                      sumberAir === s ? "bg-primary text-white" : "bg-primary-light text-primary-dark"
+                    }`}
+                  >
+                    {s === "tadah-hujan" ? "Tadah hujan" : "Irigasi"}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
 
             <button
               type="button"
@@ -296,10 +361,30 @@ export function PemupukanClient() {
             {hasil.perluDolomit && (
               <p className="mt-2 rounded-lg bg-warning-bg p-2 text-sm font-medium">
                 pH &lt; 5,5: dolomit ± {hasil.rekomendasiDolomitTonPerHa} ton/ha
-                sebelum tanam (H-14).
+                sebelum tanam (H-14)
+                {hasil.dolomitKgPerPohon > 0 &&
+                  ` / ${hasil.dolomitKgPerPohon} kg per pohon per tahun`}
+                .
+              </p>
+            )}
+            {hasil.kapurKondisional && !hasil.perluDolomit && (
+              <p className="mt-2 rounded-lg bg-warning-bg p-2 text-sm font-medium">
+                Kondisional: uji pH tanah — bila pH &lt; 5,5, tambah dolomit
+                sebelum tanam.
+              </p>
+            )}
+            {hasil.catatanKapur && !hasil.perluDolomit && !hasil.kapurKondisional && (
+              <p className="mt-2 rounded-lg bg-warning-bg p-2 text-sm font-medium">
+                {hasil.catatanKapur}
               </p>
             )}
           </section>
+
+          {hasil.peringatanMdpl && (
+            <section className="rounded-xl border border-warning-border bg-warning-bg p-4 text-sm font-medium">
+              ⚠ {hasil.peringatanMdpl}
+            </section>
+          )}
 
           <section className="rounded-xl border border-border bg-card p-4">
             <h2 className="mb-3 font-bold">Jadwal per tahap</h2>
@@ -337,6 +422,8 @@ export function PemupukanClient() {
                           {ap.hst >= 0 ? `${ap.hst} ` : `H${ap.hst} `}
                           {satuanUmurLabel(meta.tanaman.satuanUmur)} · {labelFase(ap.fase)} ·{" "}
                           {labelMetode(ap.metode)}
+                          {ap.dibagiTekstur &&
+                            ` · dibagi ${ap.dibagiTekstur.baru}× (berpasir)`}
                         </p>
                       </div>
                       <p className="text-sm font-medium">{formatTanggal(ap.tanggal)}</p>
@@ -359,6 +446,9 @@ export function PemupukanClient() {
                     </ul>
                     {ap.catatan && (
                       <p className="mt-2 rounded-lg bg-white/70 p-2 text-xs">{ap.catatan}</p>
+                    )}
+                    {ap.catatanMusim && (
+                      <p className="mt-1 text-xs text-muted">🌦 {ap.catatanMusim}</p>
                     )}
                   </div>
                 );
@@ -397,6 +487,11 @@ export function PemupukanClient() {
               {meta.tanaman.catatan.map((c) => (
                 <li key={c}>{c}</li>
               ))}
+              {hasil.catatanTanah.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+              {hasil.catatanAir && <li>{hasil.catatanAir}</li>}
+              <li>🌦 {hasil.peringatanMusim}</li>
             </ul>
           </section>
 

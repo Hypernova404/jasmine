@@ -99,6 +99,13 @@ export const ObatSchema = z.object({
   maksAplikasi: z.string().optional(),
   masaTungguPanen: z.string().optional(),
   catatan: z.string().optional(),
+  sifat: z.enum(["kontak", "sistemik", "kontak-sistemik"]).optional(),
+  kelompokAksi: z.string().optional(),
+  dosisMin: z.number().positive().optional(),
+  dosisMax: z.number().positive().optional(),
+  satuanDosis: z.enum(["mL/L", "g/L", "mL/ha", "g/ha"]).optional(),
+  intervalHari: z.tuple([z.number().int().positive(), z.number().int().positive()]).optional(),
+  masaTungguHari: z.number().int().positive().optional(),
 });
 
 export const PupukPendukungSchema = z.object({

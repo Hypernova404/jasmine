@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Gangguan, IdentifikasiResult } from "@/data/types";
 import { PLANTS, namaPupuk } from "@/lib/catalog";
@@ -516,6 +517,12 @@ export function IdentifikasiClient() {
                           ))}
                         </tbody>
                       </table>
+                      <Link
+                        href={`/penyemprotan?gangguan=${gangguan.id}`}
+                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+                      >
+                        🧮 Hitung kebutuhan semprot →
+                      </Link>
                     </div>
                   ))}
                 {tab === "pupuk" &&

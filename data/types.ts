@@ -82,6 +82,16 @@ export interface Obat {
   maksAplikasi?: string;
   masaTungguPanen?: string;
   catatan?: string;
+  /** Sifat fungisida/insektisida — memengaruhi strategi rotasi (label produk). */
+  sifat?: "kontak" | "sistemik" | "kontak-sistemik";
+  /** Kode FRAC/IRAC/HRAC untuk rotasi bahan aktif (contoh: "3A", "M01"). */
+  kelompokAksi?: string;
+  /** Dosis terstruktur untuk kalkulator semprot — opsional. */
+  dosisMin?: number;
+  dosisMax?: number;
+  satuanDosis?: "mL/L" | "g/L" | "mL/ha" | "g/ha";
+  intervalHari?: [number, number];
+  masaTungguHari?: number;
 }
 
 export interface PupukPendukung {

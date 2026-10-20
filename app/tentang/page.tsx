@@ -3,7 +3,7 @@ import { PLANTS } from "@/data/plants";
 import { FERTILIZERS } from "@/data/fertilizers";
 import { Disclaimer } from "@/components/ui/Disclaimer";
 
-export const metadata = { title: "Tentang — Tani Pintar" };
+export const metadata = { title: "Tentang — Jasmine" };
 
 export default function TentangPage() {
   const verifiedPlants = PLANTS.filter((p) => p.verified).length;
@@ -11,7 +11,7 @@ export default function TentangPage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold">Tentang Tani Pintar</h1>
+        <h1 className="text-2xl font-bold">Tentang Jasmine</h1>
         <p className="text-sm text-muted">
           Aplikasi identifikasi penyakit &amp; rekomendasi pemupukan hortikultura
           untuk lahan mineral.

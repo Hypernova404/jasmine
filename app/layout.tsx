@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tani Pintar",
+  title: "Jasmine",
   description:
     "Identifikasi penyakit tanaman & rekomendasi pemupukan hortikultura untuk lahan mineral.",
-  applicationName: "Tani Pintar",
+  applicationName: "Jasmine",
   manifest: "/manifest.json",
 };
 

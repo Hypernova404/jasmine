@@ -1,4 +1,4 @@
-# Tani Pintar
+# Jasmine
 
 Website mobile-first untuk petani/penggiat hortikultura:
 

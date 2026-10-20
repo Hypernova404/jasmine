@@ -12,12 +12,12 @@ export function buatICS({
   const fmt = (d: Date) =>
     d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const end = tanggalSelesai ?? new Date(tanggalMulai.getTime() + 3600000);
-  const uid = `tani-${tanggalMulai.getTime()}-${Math.random().toString(36).slice(2, 8)}@tani-pintar`;
+  const uid = `jasmine-${tanggalMulai.getTime()}-${Math.random().toString(36).slice(2, 8)}@jasmine`;
 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Tani Pintar//ID",
+    "PRODID:-//Jasmine//ID",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

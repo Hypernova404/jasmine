@@ -1,6 +1,6 @@
 {
-  "name": "Tani Pintar",
-  "short_name": "TaniPintar",
+  "name": "Jasmine",
+  "short_name": "Jasmine",
   "description": "Identifikasi penyakit tanaman & rekomendasi pemupukan hortikultura",
   "start_url": "/identifikasi",
   "display": "standalone",

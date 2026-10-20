@@ -6,8 +6,38 @@ import { bawangMerah } from "./plants/bawang-merah";
 import { terong } from "./plants/terong";
 import { mentimun } from "./plants/mentimun";
 import { kubis } from "./plants/kubis";
+import { sawiHijau, pakcoy, bayam, kangkung } from "./plants/sayuran-daun";
+import { kacangPanjang, buncis } from "./plants/sayuran-polong";
+import { wortel, kentang, bawangPutih } from "./plants/sayuran-umbi";
+import { cabaiRawit, melon, semangka, jagungManis, pare } from "./plants/sayuran-buah2";
+import { mangga, jeruk, pisang, pepaya } from "./plants/buah-tahunan";
 
-export const PLANTS: Tanaman[] = [cabai, tomat, bawangMerah, terong, mentimun, kubis];
+export const PLANTS: Tanaman[] = [
+  cabai,
+  tomat,
+  bawangMerah,
+  terong,
+  mentimun,
+  kubis,
+  sawiHijau,
+  pakcoy,
+  bayam,
+  kangkung,
+  kacangPanjang,
+  buncis,
+  wortel,
+  kentang,
+  bawangPutih,
+  cabaiRawit,
+  melon,
+  semangka,
+  jagungManis,
+  pare,
+  mangga,
+  jeruk,
+  pisang,
+  pepaya,
+];
 
 for (const p of PLANTS) {
   TanamanSchema.parse(p);

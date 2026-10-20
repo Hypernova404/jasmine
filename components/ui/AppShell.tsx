@@ -11,7 +11,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href="/identifikasi"
             className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight"
           >
-            Tani Pintar
+            Jasmine
           </Link>
         </div>
       </header>

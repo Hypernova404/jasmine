@@ -52,6 +52,21 @@ textarea {
   font-size: 1rem;
 }
 
+@keyframes scanline {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(10rem);
+    opacity: 0.2;
+  }
+}
+
+.animate-scanline {
+  animation: scanline 1.6s ease-in-out infinite;
+}
+
 @media print {
   .no-print {
     display: none !important;

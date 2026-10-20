@@ -1,7 +1,7 @@
 import { PemupukanPage } from "@/components/pemupukan/PemupukanPage";
 
 export const metadata = {
-  title: "Rekomendasi Pemupukan — Tani Pintar",
+  title: "Rekomendasi Pemupukan — Jasmine",
 };
 
 export default function Page() {

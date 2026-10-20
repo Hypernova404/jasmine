@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Gangguan, IdentifikasiResult } from "@/data/types";
 import { PLANTS, namaPupuk } from "@/lib/catalog";
 import { kompresGambar, formatUkuran } from "@/lib/image";
@@ -17,12 +17,21 @@ type ResponsServer = {
 
 type Tab = "kultur" | "obat" | "pupuk" | "pencegahan";
 
+type RiwayatItem = {
+  ts: number;
+  tanaman: string;
+  kondisi: string;
+  keyakinan: number;
+};
+
 const TABS: { id: Tab; label: string }[] = [
   { id: "kultur", label: "Kultur Teknis" },
   { id: "obat", label: "Obat" },
   { id: "pupuk", label: "Pupuk Pendukung" },
   { id: "pencegahan", label: "Pencegahan" },
 ];
+
+const STORAGE_KEY = "jasmine.riwayat-scan";
 
 function badgeJenis(t: string) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -47,17 +56,35 @@ function levelKeyakinan(c: number): { label: string; cls: string } {
   return { label: "Rendah", cls: "text-danger" };
 }
 
+function muatRiwayat(): RiwayatItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as RiwayatItem[]).slice(0, 20) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function IdentifikasiClient() {
   const [plantId, setPlantId] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState("Menganalisis foto dengan AI…");
   const [error, setError] = useState<string | null>(null);
   const [hasil, setHasil] = useState<ResponsServer | null>(null);
   const [tab, setTab] = useState<Tab>("kultur");
   const [sisaKuota, setSisaKuota] = useState<number | null>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const galleryRef = useRef<HTMLInputElement>(null);
+  const [riwayat, setRiwayat] = useState<RiwayatItem[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // localStorage hanya ada di client — baca sekali saat mount
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRiwayat(muatRiwayat());
+  }, []);
 
   const plantOptions = useMemo(
     () => [...PLANTS].sort((a, b) => a.nama.localeCompare(b.nama, "id")),
@@ -65,55 +92,77 @@ export function IdentifikasiClient() {
   );
 
   const tambahFiles = useCallback(async (list: FileList | null) => {
-    if (!list) return;
+    if (!list || list.length === 0) return;
     const accepted: File[] = [];
     for (const f of Array.from(list)) {
       if (!f.type.startsWith("image/")) continue;
       accepted.push(await kompresGambar(f));
     }
-    setFiles((prev) => {
-      const next = [...prev, ...accepted].slice(0, 3);
-      return next;
-    });
+    if (accepted.length === 0) return;
+    setFiles((prev) => [...prev, ...accepted].slice(0, 3));
     setPreviews((prev) => {
-      const next = [...prev, ...accepted.map((f) => URL.createObjectURL(f))].slice(0, 3);
-      return next;
+      const urls = accepted.map((f) => URL.createObjectURL(f));
+      return [...prev, ...urls].slice(0, 3);
     });
     setHasil(null);
     setError(null);
   }, []);
 
-  const hapusFoto = useCallback(
-    (i: number) => {
-      setFiles((prev) => prev.filter((_, idx) => idx !== i));
-      setPreviews((prev) => {
-        URL.revokeObjectURL(prev[i]);
-        return prev.filter((_, idx) => idx !== i);
-      });
-    },
-    [],
-  );
+  const hapusFoto = useCallback((i: number) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviews((prev) => {
+      URL.revokeObjectURL(prev[i]);
+      return prev.filter((_, idx) => idx !== i);
+    });
+  }, []);
+
+  function simpanRiwayat(r: ResponsServer) {
+    const item: RiwayatItem = {
+      ts: Date.now(),
+      tanaman: r.tanamanDitampilkan.nama,
+      kondisi: r.ai.diseaseNameGuess,
+      keyakinan: r.ai.confidence,
+    };
+    const next = [item, ...riwayat].slice(0, 20);
+    setRiwayat(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* kuota storage penuh — abaikan */
+    }
+  }
 
   async function analisis() {
     if (files.length === 0) return;
     setLoading(true);
     setError(null);
     setHasil(null);
+    const pesan = [
+      "Mengompres & mengirim foto…",
+      "Gemini sedang menganalisis gejala…",
+      "Mencocokkan dengan database penyakit…",
+    ];
+    let pi = 0;
+    setLoadingMsg(pesan[0]);
+    const timer = setInterval(() => {
+      pi = Math.min(pi + 1, pesan.length - 1);
+      setLoadingMsg(pesan[pi]);
+    }, 2500);
     try {
       const fd = new FormData();
       if (plantId) fd.append("plantId", plantId);
       files.forEach((f) => fd.append("files", f));
       const res = await fetch("/api/identify", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error ?? "Analisis gagal.");
-      }
+      if (!res.ok) throw new Error(data.error ?? "Analisis gagal.");
       setHasil(data);
       setSisaKuota(data.sisaKuota);
       setTab("kultur");
+      simpanRiwayat(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Terjadi kesalahan.");
     } finally {
+      clearInterval(timer);
       setLoading(false);
     }
   }
@@ -122,7 +171,7 @@ export function IdentifikasiClient() {
     if (!hasil) return;
     const g = hasil.gangguan;
     const lines = [
-      `Hasil Identifikasi — Tani Pintar`,
+      `Hasil Identifikasi — Jasmine`,
       `Tanaman: ${hasil.tanamanDitampilkan.nama}`,
       `Kondisi: ${hasil.ai.diseaseNameGuess}`,
       `Keyakinan: ${(hasil.ai.confidence * 100).toFixed(0)}%`,
@@ -139,9 +188,18 @@ export function IdentifikasiClient() {
     if (!hasil) return;
     const g = hasil.gangguan;
     const text = encodeURIComponent(
-      `Hasil Identifikasi Tani Pintar\nTanaman: ${hasil.tanamanDitampilkan.nama}\nKondisi: ${hasil.ai.diseaseNameGuess}\nKeyakinan: ${(hasil.ai.confidence * 100).toFixed(0)}%\n${g ? `Saran: ${g.kulturTeknis[0] ?? ""}` : ""}\n(Panduan awal — konsultasi penyuluh/POPT)`,
+      `Hasil Identifikasi Jasmine\nTanaman: ${hasil.tanamanDitampilkan.nama}\nKondisi: ${hasil.ai.diseaseNameGuess}\nKeyakinan: ${(hasil.ai.confidence * 100).toFixed(0)}%\n${g ? `Saran: ${g.kulturTeknis[0] ?? ""}` : ""}\n(Panduan awal — konsultasi penyuluh/POPT)`,
     );
     window.open(`https://wa.me/?text=${text}`, "_blank", "noopener");
+  }
+
+  function bersihkanRiwayat() {
+    setRiwayat([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 
   const gangguan = hasil?.gangguan ?? null;
@@ -174,71 +232,73 @@ export function IdentifikasiClient() {
           ))}
         </select>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 rounded-2xl border-2 border-dashed border-primary/40 bg-primary-light/20 p-4">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              void tambahFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+
+          {previews.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              {previews.map((src, i) => (
+                <div key={src} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`Foto ${i + 1}`}
+                    className="aspect-square w-full rounded-lg object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => hapusFoto(i)}
+                    aria-label={`Hapus foto ${i + 1}`}
+                    className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm text-white"
+                  >
+                    ✕
+                  </button>
+                  <p className="mt-1 truncate text-xs text-muted">
+                    {formatUkuran(files[i]?.size ?? 0)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-4 text-center">
+              <p className="text-4xl" aria-hidden>
+                📸
+              </p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                Belum ada foto terpilih
+              </p>
+              <p className="text-xs text-muted">
+                Maksimal 3 foto (daun, buah, batang)
+              </p>
+            </div>
+          )}
+
           <button
             type="button"
-            onClick={() => cameraRef.current?.click()}
-            className="rounded-xl bg-primary px-4 py-4 text-base font-bold text-white active:bg-primary-dark"
+            onClick={() => fileRef.current?.click()}
+            className="mt-3 w-full rounded-xl border-2 border-primary bg-white px-4 py-3.5 text-base font-bold text-primary-dark active:bg-primary-light"
           >
-            📷 Ambil Foto
+            {previews.length === 0
+              ? "Pilih File"
+              : previews.length < 3
+                ? "+ Tambah Foto"
+                : "Ganti Foto"}
           </button>
-          <button
-            type="button"
-            onClick={() => galleryRef.current?.click()}
-            className="rounded-xl border-2 border-primary bg-white px-4 py-4 text-base font-bold text-primary-dark active:bg-primary-light"
-          >
-            🖼 Pilih Galeri
-          </button>
-        </div>
-        <input
-          ref={cameraRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          multiple
-          className="hidden"
-          onChange={(e) => void tambahFiles(e.target.files)}
-        />
-        <input
-          ref={galleryRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => void tambahFiles(e.target.files)}
-        />
-
-        {previews.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            {previews.map((src, i) => (
-              <div key={src} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src}
-                  alt={`Foto ${i + 1}`}
-                  className="aspect-square w-full rounded-lg object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => hapusFoto(i)}
-                  aria-label={`Hapus foto ${i + 1}`}
-                  className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm text-white"
-                >
-                  ✕
-                </button>
-                <p className="mt-1 truncate text-xs text-muted">
-                  {formatUkuran(files[i]?.size ?? 0)}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {files.length > 0 && files.length < 3 && (
-          <p className="mt-2 text-xs text-muted">
-            Boleh tambah foto (daun, buah, batang) — maksimal 3 foto.
+          <p className="mt-2 text-center text-xs text-muted">
+            Saat diklik, pilih <strong>kamera</strong> atau <strong>galeri</strong> dari
+            menu HP kamu
           </p>
-        )}
+        </div>
 
         <button
           type="button"
@@ -246,7 +306,7 @@ export function IdentifikasiClient() {
           disabled={files.length === 0 || loading}
           className="mt-4 w-full rounded-xl bg-primary-dark px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
         >
-          {loading ? "Menganalisis…" : "Analisis"}
+          {loading ? "Menganalisis…" : "🔍 Analisis Sekarang"}
         </button>
         {sisaKuota !== null && (
           <p className="mt-2 text-center text-xs text-muted">
@@ -267,11 +327,27 @@ export function IdentifikasiClient() {
 
       {loading && (
         <div
-          className="flex items-center justify-center gap-3 rounded-xl border border-border bg-card p-8"
+          className="relative overflow-hidden rounded-xl border-2 border-primary bg-card p-6"
           role="status"
+          aria-live="polite"
         >
-          <span className="h-6 w-6 animate-spin rounded-full border-[3px] border-primary border-t-transparent" />
-          <span className="font-medium">Menganalisis foto dengan AI…</span>
+          <div className="flex items-center gap-4">
+            <div className="relative h-16 w-16 shrink-0">
+              <div className="absolute inset-0 rounded-full border-4 border-primary-light" />
+              <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-primary" />
+              <span className="absolute inset-0 flex items-center justify-center text-xl">
+                🔍
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-primary-dark">Sedang menganalisis…</p>
+              <p className="animate-pulse text-sm text-muted">{loadingMsg}</p>
+            </div>
+          </div>
+          <div
+            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-scanline"
+            aria-hidden
+          />
         </div>
       )}
 
@@ -299,17 +375,16 @@ export function IdentifikasiClient() {
               )}
             </div>
             <h2 className="text-xl font-bold">
-              {hasil.tanamanDitampilkan.nama}
-              {hasil.ai.diseaseId !== null || hasil.ai.conditionType === "sehat"
-                ? ` — ${hasil.ai.diseaseNameGuess}`
-                : ` — ${hasil.ai.diseaseNameGuess}`}
+              {hasil.tanamanDitampilkan.nama} — {hasil.ai.diseaseNameGuess}
             </h2>
-            {!hasil.terverifikasi && hasil.ai.diseaseId === null && hasil.ai.conditionType !== "sehat" && (
-              <p className="rounded-lg bg-warning-bg px-3 py-2 text-sm">
-                Belum ada di database. Informasi umum, belum diverifikasi. Hanya
-                saran umum aman yang ditampilkan.
-              </p>
-            )}
+            {!hasil.terverifikasi &&
+              hasil.ai.diseaseId === null &&
+              hasil.ai.conditionType !== "sehat" && (
+                <p className="rounded-lg bg-warning-bg px-3 py-2 text-sm">
+                  Belum ada di database. Informasi umum, belum diverifikasi. Hanya
+                  saran umum aman yang ditampilkan.
+                </p>
+              )}
             {rendah && hasil.ai.conditionType !== "sehat" && (
               <div className="rounded-lg border border-warning-border bg-warning-bg p-3 text-sm font-medium">
                 Hasil belum pasti. Ambil foto ulang atau konsultasikan ke
@@ -395,7 +470,10 @@ export function IdentifikasiClient() {
                         </thead>
                         <tbody>
                           {gangguan.obat.map((o) => (
-                            <tr key={o.bahanAktif + o.dosis} className="border-b border-border/50 align-top">
+                            <tr
+                              key={o.bahanAktif + o.dosis}
+                              className="border-b border-border/50 align-top"
+                            >
                               <td className="py-2 pr-2 font-medium">
                                 {o.bahanAktif}
                                 {o.catatan && (
@@ -420,7 +498,9 @@ export function IdentifikasiClient() {
                   ))}
                 {tab === "pupuk" &&
                   (gangguan.pupukPendukung.length === 0 ? (
-                    <p className="text-sm text-muted">Tidak ada pupuk pendukung khusus.</p>
+                    <p className="text-sm text-muted">
+                      Tidak ada pupuk pendukung khusus.
+                    </p>
                   ) : (
                     <ul className="space-y-2 text-sm">
                       {gangguan.pupukPendukung.map((p) => (
@@ -444,17 +524,19 @@ export function IdentifikasiClient() {
             </section>
           )}
 
-          {!hasil.terverifikasi && hasil.ai.diseaseId === null && hasil.ai.conditionType !== "sehat" && (
-            <section className="rounded-lg bg-primary-light/40 p-3 text-sm">
-              <h3 className="mb-1 font-semibold">Saran umum yang aman</h3>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>Sanitasi lahan — buang bagian tanaman yang sakit</li>
-                <li>Isolasi tanaman yang terlihat sakit</li>
-                <li>Perbaiki drainase &amp; jaga kelembapan</li>
-                <li>Konsultasikan ke penyuluh/POPT setempat</li>
-              </ul>
-            </section>
-          )}
+          {!hasil.terverifikasi &&
+            hasil.ai.diseaseId === null &&
+            hasil.ai.conditionType !== "sehat" && (
+              <section className="rounded-lg bg-primary-light/40 p-3 text-sm">
+                <h3 className="mb-1 font-semibold">Saran umum yang aman</h3>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>Sanitasi lahan — buang bagian tanaman yang sakit</li>
+                  <li>Isolasi tanaman yang terlihat sakit</li>
+                  <li>Perbaiki drainase &amp; jaga kelembapan</li>
+                  <li>Konsultasikan ke penyuluh/POPT setempat</li>
+                </ul>
+              </section>
+            )}
 
           {hasil.ai.differential.length > 0 && (
             <section>
@@ -463,7 +545,9 @@ export function IdentifikasiClient() {
                 {hasil.ai.differential.slice(0, 2).map((d) => (
                   <li key={d.name} className="flex justify-between gap-2">
                     <span>{d.name}</span>
-                    <span className="text-muted">{(d.confidence * 100).toFixed(0)}%</span>
+                    <span className="text-muted">
+                      {(d.confidence * 100).toFixed(0)}%
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -489,6 +573,53 @@ export function IdentifikasiClient() {
 
           <Disclaimer />
         </article>
+      )}
+
+      {riwayat.length > 0 && (
+        <section className="no-print rounded-xl border border-border bg-card p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="font-semibold">Riwayat scan terakhir</h2>
+            <button
+              type="button"
+              onClick={bersihkanRiwayat}
+              className="text-xs font-medium text-danger"
+            >
+              Hapus
+            </button>
+          </div>
+          <p className="mb-2 text-xs text-muted">
+            Disimpan lokal di HP kamu — foto tidak pernah disimpan.
+          </p>
+          <ul className="divide-y divide-border text-sm">
+            {riwayat.map((r) => (
+              <li key={r.ts} className="flex items-start justify-between gap-2 py-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{r.tanaman}</p>
+                  <p className="truncate text-xs text-muted">{r.kondisi}</p>
+                </div>
+                <div className="shrink-0 text-right text-xs text-muted">
+                  <p className="font-semibold text-foreground">
+                    {(r.keyakinan * 100).toFixed(0)}%
+                  </p>
+                  <p>
+                    {new Intl.DateTimeFormat("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(r.ts))}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {!hasil && riwayat.length === 0 && (
+        <p className="no-print text-center text-xs text-muted">
+          Riwayat scan akan muncul di sini (lokal, tanpa foto).
+        </p>
       )}
     </div>
   );

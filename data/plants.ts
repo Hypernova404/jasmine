@@ -11,8 +11,10 @@ import { kacangPanjang, buncis } from "./plants/sayuran-polong";
 import { wortel, kentang, bawangPutih } from "./plants/sayuran-umbi";
 import { cabaiRawit, melon, semangka, jagungManis, pare } from "./plants/sayuran-buah2";
 import { mangga, jeruk, pisang, pepaya } from "./plants/buah-tahunan";
+import { padi } from "./plants/padi";
 
 export const PLANTS: Tanaman[] = [
+  padi,
   cabai,
   tomat,
   bawangMerah,

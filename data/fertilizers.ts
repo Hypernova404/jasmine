@@ -151,6 +151,13 @@ export const FERTILIZERS: Pupuk[] = [
     tipe: "hayati",
     keterangan: "Jamur mikoriza memperluas serapan hara akar.",
   },
+  {
+    id: "znso4",
+    nama: "Zinc Sulfat (ZnSO₄)",
+    kandungan: "Zn 33–36%",
+    tipe: "tunggal",
+    keterangan: "Mikrohara zink untuk mengatasi defisiensi Zn pada padi & tanaman lain.",
+  },
 ];
 
 export const FERTILIZER_MAP: Record<string, Pupuk> = Object.fromEntries(
